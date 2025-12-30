@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Recibos - Sol Del Amanecer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Google Fonts: Inter & Roboto Mono -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Roboto Mono', 'monospace'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f3f4f6;
+        }
+
+        /* Estilos específicos de impresión A4 APAISADO */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 0;
+            }
+
+            body {
+                background: white;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .print-container {
+                width: 297mm;
+                /* A4 Landscape Width */
+                height: 210mm;
+                /* A4 Landscape Height */
+                margin: 0 auto;
+                page-break-after: always;
+                box-shadow: none;
+                display: flex;
+                /* Side by side */
+            }
+        }
+
+        /* Simulación A4 en pantalla */
+        .a4-page {
+            width: 297mm;
+            height: 210mm;
+            background: white;
+            margin: auto;
+            position: relative;
+            display: flex;
+            /* Side by side preview */
+            transform: scale(0.9);
+            /* Zoom out un poco en pantalla */
+            transform-origin: top center;
+        }
+
+        /* Input invisible para edición en línea */
+        .invisible-input {
+            background: transparent;
+            border: none;
+            width: 100%;
+            outline: none;
+        }
+
+        .invisible-input:focus {
+            background: rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body id="app" class="text-slate-800">
+
+    <div class="flex h-screen flex-col md:flex-row overflow-hidden">
+
+        <!-- SIDEBAR DE CONTROLES (No se imprime) -->
+        <div
+            class="w-full md:w-1/3 lg:w-1/4 bg-white border-r border-gray-200 flex flex-col h-full no-print z-10 shadow-lg">
+            <div class="p-4 bg-slate-800 text-white flex justify-between items-center">
+                <h1 class="font-bold text-lg"><i class="fa-solid fa-file-invoice-dollar mr-2"></i>Generador Recibos</h1>
+                <button @click="printReceipt"
+                    class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-bold transition">
+                    <i class="fa-solid fa-print"></i> IMPRIMIR
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-6">
+
+                <!-- SECCION 1: EMPRESA Y FECHAS -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <h3 class="font-bold text-sm text-slate-500 mb-2 uppercase tracking-wider">Datos Liquidación</h3>
+                    <div class="grid grid-cols-1 gap-2 text-sm">
+                        <label class="block">
+                            <span class="text-xs font-semibold">Periodo (Texto)</span>
+                            <input type="text" v-model="receipt.periodo"
+                                class="w-full px-2 py-1 border rounded focus:ring-2 ring-blue-500"
+                                placeholder="SEPTIEMBRE DE 2025">
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="block">
+                                <span class="text-xs font-semibold">F. Pago</span>
+                                <input type="text" v-model="receipt.fechaPago" class="w-full px-2 py-1 border rounded">
+                            </label>
+                            <label class="block">
+                                <span class="text-xs font-semibold">Ult. Depósito</span>
+                                <input type="text" v-model="receipt.ultimoDeposito"
+                                    class="w-full px-2 py-1 border rounded" placeholder="BANCO...">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCION 2: EMPLEADO -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-bold text-sm text-slate-500 uppercase tracking-wider">Empleado</h3>
+                        <div class="text-xs space-x-1">
+                            <button @click="loadEmployee('dario')" class="text-blue-600 hover:underline">Dario</button>
+                            <button @click="loadEmployee('mariela')"
+                                class="text-blue-600 hover:underline">Mariela</button>
+                            <button @click="loadEmployee('willy')" class="text-blue-600 hover:underline">Willy</button>
+                            <button @click="loadEmployee('zarate')"
+                                class="text-blue-600 hover:underline">Zarate</button>
+                        </div>
+                    </div>
+                    <!-- PRESETS DE RECIBOS MARIELA (YOHANA) -->
+                    <div class="mb-2 space-y-1">
+                        <div class="flex gap-1">
+                            <button @click="loadPreset('mariela_sep')"
+                                class="w-1/3 bg-green-100 text-green-700 hover:bg-green-200 text-xs py-1 px-1 rounded font-semibold text-center border border-green-300">
+                                SEP
+                            </button>
+                            <button @click="loadPreset('mariela_oct')"
+                                class="w-1/3 bg-orange-100 text-orange-700 hover:bg-orange-200 text-xs py-1 px-1 rounded font-semibold text-center border border-orange-300">
+                                OCT
+                            </button>
+                            <button @click="loadPreset('mariela_nov')"
+                                class="w-1/3 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs py-1 px-1 rounded font-semibold text-center border border-blue-300">
+                                NOV
+                            </button>
+                        </div>
+                        <button @click="loadPreset('mariela_sac')"
+                            class="w-full bg-purple-100 text-purple-700 hover:bg-purple-200 text-xs py-1 px-2 rounded font-semibold text-center border border-purple-300">
+                            <i class="fa-solid fa-star mr-1"></i> MARIELA - AGUINALDO (SAC)
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-2 text-sm">
+                        <input type="text" v-model="employee.nombre"
+                            class="w-full px-2 py-1 border rounded font-semibold" placeholder="Nombre Completo">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" v-model="employee.cuil" class="w-full px-2 py-1 border rounded"
+                                placeholder="CUIL">
+                            <input type="text" v-model="employee.legajo" class="w-full px-2 py-1 border rounded"
+                                placeholder="Legajo">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" v-model="employee.ingreso" class="w-full px-2 py-1 border rounded"
+                                placeholder="F. Ingreso">
+                            <input type="number" v-model="employee.antiguedad" class="w-full px-2 py-1 border rounded"
+                                placeholder="Antigüedad">
+                        </div>
+                        <input type="text" v-model="employee.categoria" class="w-full px-2 py-1 border rounded"
+                            placeholder="Categoría">
+                    </div>
+                </div>
+
+                <!-- SECCION 3: MODO SAC -->
+                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" v-model="isSACMode"
+                            class="form-checkbox h-4 w-4 text-indigo-600 rounded">
+                        <span class="font-bold text-indigo-900 text-sm">Modo SAC (Aguinaldo)</span>
+                    </label>
+                    <div v-if="isSACMode" class="mt-2 transition-all">
+                        <label class="block">
+                            <span class="text-xs font-semibold text-indigo-700">Mejor Sueldo Semestre</span>
+                            <input type="number" v-model.number="sacBestSalary" @input="calculateSAC"
+                                class="w-full px-2 py-1 border border-indigo-300 rounded focus:ring-2 ring-indigo-500"
+                                placeholder="Ej: 1062573.05">
+                        </label>
+                        <p class="text-xs text-indigo-600 mt-1 italic">Calcula 50% automáticamente y aplica retenciones.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- SECCION 4: CONCEPTOS (Si no es SAC, o adicionales al SAC) -->
+                <div class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                    <h3 class="font-bold text-sm text-slate-500 mb-2 uppercase tracking-wider">Conceptos / Ítems</h3>
+
+                    <div class="space-y-2 mb-4">
+                        <div v-for="(item, index) in concepts" :key="index"
+                            class="flex items-start space-x-1 p-1 hover:bg-gray-50 rounded group">
+                            <div class="flex-1 grid grid-cols-12 gap-1">
+                                <input type="number" v-model="item.cantidad"
+                                    class="col-span-2 text-xs border rounded px-1" placeholder="Cant">
+                                <input type="text" v-model="item.descripcion"
+                                    class="col-span-5 text-xs border rounded px-1 font-medium"
+                                    placeholder="Descripción">
+                                <input type="number" v-model.number="item.valorUnitario"
+                                    class="col-span-3 text-xs border rounded px-1 text-right" placeholder="Unitario">
+                                <select v-model="item.tipo" class="col-span-2 text-[10px] border rounded px-0">
+                                    <option value="REM">REM</option>
+                                    <option value="NO_REM">NO R</option>
+                                    <option value="DED">DED</option>
+                                </select>
+                            </div>
+                            <button @click="removeConcept(index)"
+                                class="text-red-400 hover:text-red-600 px-1 opacity-0 group-hover:opacity-100"><i
+                                    class="fa-solid fa-times"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button @click="addConceptSemiblank('REM')"
+                            class="bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs hover:bg-blue-100">+ Hab.
+                            Remunerativo</button>
+                        <button @click="addConceptSemiblank('NO_REM')"
+                            class="bg-green-50 text-green-600 px-2 py-1 rounded text-xs hover:bg-green-100">+ Hab. No
+                            Remun.</button>
+                        <button @click="addConceptSemiblank('DED')"
+                            class="bg-red-50 text-red-600 px-2 py-1 rounded text-xs hover:bg-red-100">+ Deducción
+                            Manual</button>
+                        <button @click="autoCalculateDeductions"
+                            class="bg-gray-800 text-white px-2 py-1 rounded text-xs hover:bg-gray-700 border-2 border-gray-800"><i
+                                class="fa-solid fa-wand-magic-sparkles"></i> Calc. Deducciones</button>
+                    </div>
+                </div>
+
+                <!-- TOTALES DEBUG -->
+                <div class="text-xs text-gray-400 mt-4 border-t pt-2">
+                    <p>Bruto Rem: {{ formatCurrency(totalRemunerativo) }}</p>
+                    <p>No Rem: {{ formatCurrency(totalNoRemunerativo) }}</p>
+                    <p>Deducciones: {{ formatCurrency(totalDeducciones) }}</p>
+                </div>
+            </div>
+
+            <div class="p-2 border-t text-xs text-center text-gray-400">
+                Sistema Recibos v1.0 - Local Mode
+            </div>
+        </div>
+
+        <!-- AREA DE VISTA PREVIA (MAIN) -->
+        <div class="flex-1 bg-gray-600 overflow-y-auto p-4 md:p-8 relative flex justify-center items-start">
+
+            <!-- HOJA A4 APAISADA -->
+            <div class="a4-page shadow-2xl overflow-hidden print-container text-black font-sans text-xs leading-tight">
+
+                <!-- RECIBO IZQUIERDA -->
+                <div class="w-1/2 h-full flex flex-col p-8 border-r-2 border-dashed border-gray-300">
+                    <!-- CONTENIDO RECIBO (TEMPLATE COMUN) -->
+                    <div class="flex-1 flex flex-col">
+                        <!-- HEADER -->
+                        <div class="border-b-2 border-black pb-2 mb-2">
+                            <div class="flex justify-between items-end mb-2">
+                                <h1 class="font-bold text-xl uppercase tracking-tight">Recibo de Haberes</h1>
+                                <div class="text-right text-[10px] leading-tight">
+                                    <span class="font-bold text-xs">DUPLICADO</span><br>
+                                    (Para el Empleado)
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-1 mb-1">
+                                <div class="col-span-8 font-bold text-base uppercase">{{ company.razonSocial }}</div>
+                                <div class="col-span-4 text-right font-bold text-xs">C.U.I.T.: {{ company.cuit }}</div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-1 text-[10px]">
+                                <div class="col-span-8">DOM: {{ company.domicilio }}</div>
+                                <div class="col-span-4 text-right">PERIODO: <span class="font-bold">{{ receipt.periodo
+                                        }}</span></div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-1 text-[10px]">
+                                <div class="col-span-8">LOC: {{ company.lugarPago }}</div>
+                                <div class="col-span-4 text-right">FECHA PAGO: {{ receipt.fechaPago }}</div>
+                            </div>
+                        </div>
+
+                        <!-- EMPLEADO -->
+                        <div class="border-b-2 border-black pb-2 mb-2 bg-gray-50 p-2 rounded-sm">
+                            <div class="grid grid-cols-12 gap-y-1 gap-x-2 text-[10px]">
+                                <div class="col-span-8"><span class="font-bold">Empleado:</span> {{ employee.nombre }}
+                                </div>
+                                <div class="col-span-4 text-right"><span class="font-bold">Legajo:</span> {{
+                                    employee.legajo }}</div>
+
+                                <div class="col-span-4">CUIL: {{ employee.cuil }}</div>
+                                <div class="col-span-4 text-center">F. Ing: {{ employee.ingreso }}</div>
+                                <div class="col-span-4 text-right">Antig: {{ employee.antiguedad }} a.</div>
+
+                                <div class="col-span-12 font-bold uppercase mt-1">Cat: {{ employee.categoria }}</div>
+                            </div>
+                        </div>
+
+                        <!-- TABLA HEADERS -->
+                        <div
+                            class="grid grid-cols-12 gap-1 border-b-2 border-black font-bold text-[9px] uppercase pb-1 mb-1">
+                            <div class="col-span-1 text-center">Cant</div>
+                            <div class="col-span-6">Concepto</div>
+                            <div class="col-span-3 text-right">Haberes</div>
+                            <div class="col-span-2 text-right">Deduc.</div>
+                        </div>
+
+                        <!-- TABLA BODY -->
+                        <div class="flex-1 relative overflow-hidden">
+                            <div v-for="(item, index) in processedConcepts" :key="index"
+                                class="grid grid-cols-12 gap-1 leading-none text-[9px] mb-1 py-0.5 border-b border-gray-100">
+                                <div class="col-span-1 text-center font-mono text-gray-500">{{ item.cantidad > 0 ?
+                                    formatNumber(item.cantidad) : '' }}</div>
+                                <div class="col-span-6 uppercase truncate">{{ item.descripcion }}</div>
+                                <div class="col-span-3 text-right font-mono">
+                                    {{ (item.tipo === 'REM' || item.tipo === 'NO_REM') ?
+                                    formatCurrencyPlain(item.total) : '' }}
+                                </div>
+                                <div class="col-span-2 text-right font-mono">
+                                    {{ item.tipo === 'DED' ? formatCurrencyPlain(item.total) : '' }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FOOTER -->
+                        <div class="border-t-2 border-black pt-2 mt-2">
+                            <div class="grid grid-cols-3 gap-2 mb-2 text-[10px]">
+                                <div>
+                                    <div class="font-bold text-[9px] text-gray-500 uppercase">Hab. c/desc</div>
+                                    <div class="font-mono">{{ formatCurrencyPlain(totalRemunerativo) }}</div>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-[9px] text-gray-500 uppercase">No Remun.</div>
+                                    <div class="font-mono">{{ formatCurrencyPlain(totalNoRemunerativo) }}</div>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-[9px] text-gray-500 uppercase">Deducciones</div>
+                                    <div class="font-mono">{{ formatCurrencyPlain(totalDeducciones) }}</div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-end border-t border-gray-300 pt-2 mb-4">
+                                <div class="text-[9px] max-w-[60%] leading-tight text-gray-600 italic">
+                                    Son: {{ numeroALetras(netoPercibir) }}
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold text-[9px] uppercase mb-1">Neto a Cobrar</div>
+                                    <div class="text-xl font-bold border border-black px-2 py-0.5 shadow-sm bg-gray-50">
+                                        {{ formatCurrencyPlain(netoPercibir) }}</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-8 flex justify-between px-4">
+                                <div class="text-center w-5/12 border-t border-black pt-1 text-[9px] uppercase">Firma
+                                    Empleador</div>
+                                <div class="text-center w-5/12 border-t border-black pt-1 text-[9px] uppercase">Firma
+                                    Empleado</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RECIBO DERECHA (COPIA IDENTICA) -->
+                <div class="w-1/2 h-full flex flex-col p-8">
+                    <!-- CONTENIDO RECIBO (TEMPLATE COMUN) -->
+                    <div class="flex-1 flex flex-col">
+                        <!-- HEADER -->
+                        <div class="border-b-2 border-black pb-2 mb-2">
+                            <div class="flex justify-between items-end mb-2">
+                                <h1 class="font-bold text-xl uppercase tracking-tight">Recibo de Haberes</h1>
+                                <div class="text-right text-[10px] leading-tight">
+                                    <span class="font-bold text-xs">ORIGINAL</span><br>
+                                    (Para el Empleador)
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-1 mb-1">
+                                <div class="col-span-8 font-bold text-base uppercase">{{ company.razonSocial }}</div>
+                                <div class="col-span-4 text-right font-bold text-xs">C.U.I.T.: {{ company.cuit }}</div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-1 text-[10px]">
+                                <div class="col-span-8">DOM: {{ company.domicilio }}</div>
+                                <div class="col-span-4 text-right">PERIODO: <span class="font-bold">{{ receipt.periodo
+                                        }}</span></div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-1 text-[10px]">
+                                <div class="col-span-8">LOC: {{ company.lugarPago }}</div>
+                                <div class="col-span-4 text-right">FECHA PAGO: {{ receipt.fechaPago }}</div>
+                            </div>
+                        </div>
+
+                        <!-- EMPLEADO -->
+                        <div class="border-b-2 border-black pb-2 mb-2 bg-gray-50 p-2 rounded-sm">
+                            <div class="grid grid-cols-12 gap-y-1 gap-x-2 text-[10px]">
+                                <div class="col-span-8"><span class="font-bold">Empleado:</span> {{ employee.nombre }}
+                                </div>
+                                <div class="col-span-4 text-right"><span class="font-bold">Legajo:</span> {{
+                                    employee.legajo }}</div>
+
+                                <div class="col-span-4">CUIL: {{ employee.cuil }}</div>
+                                <div class="col-span-4 text-center">F. Ing: {{ employee.ingreso }}</div>
+                                <div class="col-span-4 text-right">Antig: {{ employee.antiguedad }} a.</div>
+
+                                <div class="col-span-12 font-bold uppercase mt-1">Cat: {{ employee.categoria }}</div>
+                            </div>
+                        </div>
+
+                        <!-- TABLA HEADERS -->
+                        <div
+                            class="grid grid-cols-12 gap-1 border-b-2 border-black font-bold text-[9px] uppercase pb-1 mb-1">
+                            <div class="col-span-1 text-center">Cant</div>
+                            <div class="col-span-6">Concepto</div>
+                            <div class="col-span-3 text-right">Haberes</div>
+                            <div class="col-span-2 text-right">Deduc.</div>
+                        </div>
+
+                        <!-- TABLA BODY -->
+                        <div class="flex-1 relative overflow-hidden">
+                            <div v-for="(item, index) in processedConcepts" :key="index"
+                                class="grid grid-cols-12 gap-1 leading-none text-[9px] mb-1 py-0.5 border-b border-gray-100">
+                                <div class="col-span-1 text-center font-mono text-gray-500">{{ item.cantidad > 0 ?
+                                    formatNumber(item.cantidad) : '' }}</div>
+                                <div class="col-span-6 uppercase truncate">{{ item.descripcion }}</div>
+                                <div class="col-span-3 text-right font-mono">
+                                    {{ (item.tipo === 'REM' || item.tipo === 'NO_REM') ?
+                                    formatCurrencyPlain(item.total) : '' }}
+                                </div>
+                                <div class="col-span-2 text-right font-mono">
+                                    {{ item.tipo === 'DED' ? formatCurrencyPlain(item.total) : '' }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FOOTER -->
+                        <div class="border-t-2 border-black pt-2 mt-2">
+                            <div class="grid grid-cols-3 gap-2 mb-2 text-[10px]">
+                                <div>
+                                    <div class="font-bold text-[9px] text-gray-500 uppercase">Hab. c/desc</div>
+                                    <div class="font-mono">{{ formatCurrencyPlain(totalRemunerativo) }}</div>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-[9px] text-gray-500 uppercase">No Remun.</div>
+                                    <div class="font-mono">{{ formatCurrencyPlain(totalNoRemunerativo) }}</div>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-[9px] text-gray-500 uppercase">Deducciones</div>
+                                    <div class="font-mono">{{ formatCurrencyPlain(totalDeducciones) }}</div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-end border-t border-gray-300 pt-2 mb-4">
+                                <div class="text-[9px] max-w-[60%] leading-tight text-gray-600 italic">
+                                    Son: {{ numeroALetras(netoPercibir) }}
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold text-[9px] uppercase mb-1">Neto a Cobrar</div>
+                                    <div class="text-xl font-bold border border-black px-2 py-0.5 shadow-sm bg-gray-50">
+                                        {{ formatCurrencyPlain(netoPercibir) }}</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-8 flex justify-between px-4">
+                                <div class="text-center w-5/12 border-t border-black pt-1 text-[9px] uppercase">Firma
+                                    Empleado</div>
+                                <div class="text-center w-5/12 border-t border-black pt-1 text-[9px] uppercase">Firma
+                                    Empleador</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                // ESTADO
+                const company = ref({
+                    razonSocial: 'SOL DEL AMANECER S.R.L.',
+                    cuit: '30-71096574-5',
+                    domicilio: 'CAMINO 60 CUADRAS KM 5 1/2',
+                    lugarPago: 'CORDOBA'
+                });
+
+                const receipt = ref({
+                    periodo: 'SEPTIEMBRE DE 2025',
+                    fechaPago: '06/10/2025',
+                    ultimoDeposito: 'Banco'
+                });
+
+                const employee = ref({
+                    nombre: 'ORTIZ DARIO ADRIAN',
+                    cuil: '20-21376999-6',
+                    legajo: '822.06',
+                    ingreso: '17/10/2012',
+                    antiguedad: 13,
+                    categoria: 'AUXILIAR OPERATIVO'
+                });
+
+                // LISTA DE DATOS PREDEFINIDOS PARA CARGA RÁPIDA
+                const employeesDB = {
+                    dario: { nombre: 'ORTIZ DARIO ADRIAN', cuil: '20-21376999-6', legajo: '822.06', ingreso: '17/10/2012', categoria: 'AUXILIAR OPERATIVO' },
+                    mariela: { nombre: 'CANDELLERO VELOZO YOHANA', cuil: '27-35576499-6', legajo: '822.22', ingreso: '10/09/2015', categoria: 'ADMINISTRATIVO' },
+                    willy: { nombre: 'PEREZ WILLY', cuil: '20-XXXXXXXX-X', legajo: '824.05', ingreso: '05/05/2018', categoria: 'CHOFER 1RA' },
+                    zarate: { nombre: 'LOPEZ ZARATE', cuil: '20-XXXXXXXX-X', legajo: '825.02', ingreso: '10/02/2020', categoria: 'PEON' }
+                };
+
+                // RECIBOS HISTORICOS (MARIELA)
+                const savedReceipts = {
+                    mariela_sac: {
+                        label: 'Mariela - SAC 2do Sem',
+                        periodo: '2do SAC 2025',
+                        isSac: true,
+                        concepts: [
+                            { cantidad: 0, descripcion: 'SAC 2 DO SEM 2025', valorUnitario: 516233.17, tipo: 'REM' },
+                            { cantidad: 0, descripcion: 'JUBILACION', valorUnitario: 56785.65, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'LEY 19032', valorUnitario: 15486.99, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'OBRA SOCIAL', valorUnitario: 15486.99, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'CUOTA SINDICAL', valorUnitario: 15486.99, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'SEG. SEPELIO', valorUnitario: 7743.50, tipo: 'DED' },
+                        ]
+                    },
+                    mariela_sep: {
+                        label: 'Mariela - Septiembre (798k)',
+                        periodo: 'SEPTIEMBRE 2025',
+                        isSac: false,
+                        concepts: [
+                            { cantidad: 0, descripcion: 'SUELDO BASICO', valorUnitario: 798851.62, tipo: 'REM' },
+                            { cantidad: 0, descripcion: 'ADICIONAL ESPECIALIDAD', valorUnitario: 95862.22, tipo: 'REM' },
+                            { cantidad: 0, descripcion: 'ANTIGUEDAD', valorUnitario: 89471.40, tipo: 'REM' },
+                            { cantidad: 0, descripcion: 'BONO NO REMUNERATIVO', valorUnitario: 25000.00, tipo: 'NO_REM' },
+                            { cantidad: 22, descripcion: 'COMIDA X DIA DE TRABAJO', valorUnitario: 270237.00, tipo: 'NO_REM' },
+                            { cantidad: 22, descripcion: 'VIATICOS ESPECIAL', valorUnitario: 135604.48, tipo: 'NO_REM' },
+                            { cantidad: 22, descripcion: 'ADICIONAL COMIDA', valorUnitario: 27023.70, tipo: 'NO_REM' },
+                            { cantidad: 22, descripcion: 'ADICIONAL VIATICO', valorUnitario: 13560.36, tipo: 'NO_REM' },
+                            // Deducciones
+                            { cantidad: 0, descripcion: 'JUBILACION', valorUnitario: 108260.40, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'LEY 19032', valorUnitario: 29525.56, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'OBRA SOCIAL', valorUnitario: 29525.56, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'CUOTA SINDICAL', valorUnitario: 29525.56, tipo: 'DED' },
+                            { cantidad: 1, descripcion: 'SEGURO DE SEPELIO', valorUnitario: 14762.78, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'CUOTA DE AFILIACION', valorUnitario: 16055.19, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'ADELANTOS', valorUnitario: 24308.98, tipo: 'DED' },
+                        ]
+                    },
+                    mariela_oct: {
+                        label: 'Mariela - Octubre (829k)',
+                        periodo: 'OCTUBRE 2025',
+                        isSac: false,
+                        concepts: [
+                            { cantidad: 0, descripcion: 'SUELDO BASICO', valorUnitario: 829743.42, tipo: 'REM' },
+                            { cantidad: 0, descripcion: 'ADICIONAL ESPECIALIDAD', valorUnitario: 99569.21, tipo: 'REM' },
+                            { cantidad: 0, descripcion: 'ANTIGUEDAD', valorUnitario: 92931.26, tipo: 'REM' },
+                            { cantidad: 0, descripcion: 'COMIDA X DIA', valorUnitario: 293445.50, tipo: 'NO_REM' },
+                            { cantidad: 0, descripcion: 'VIAT. COMIDA', valorUnitario: 29344.55, tipo: 'NO_REM' },
+                            { cantidad: 0, descripcion: 'ADIC. VIATICO', valorUnitario: 147250.60, tipo: 'NO_REM' },
+                            { cantidad: 0, descripcion: 'VIAT. VIATICO', valorUnitario: 14725.06, tipo: 'NO_REM' },
+                            { cantidad: 0, descripcion: 'JUBILACION', valorUnitario: 112446.83, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'LEY 19032', valorUnitario: 30667.32, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'OBRA SOCIAL', valorUnitario: 30667.32, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'CUOTA SINDICAL', valorUnitario: 30667.32, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'SEG. SEPELIO', valorUnitario: 15333.66, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'CTA AFILIACION', valorUnitario: 16676.04, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'ADELANTO', valorUnitario: 218308.98, tipo: 'DED' },
+                        ]
+                    },
+                    mariela_nov: {
+                        label: 'Mariela - Noviembre (838k)',
+                        periodo: 'NOVIEMBRE 2025',
+                        isSac: false,
+                        concepts: [
+                            { cantidad: 0, descripcion: 'SUELDO BASICO', valorUnitario: 838040.85, tipo: 'REM' },
+                            { cantidad: 0, descripcion: 'ADICIONAL ESPECIALIDAD', valorUnitario: 100564.90, tipo: 'REM' },
+                            { cantidad: 0, descripcion: 'ANTIGUEDAD', valorUnitario: 93860.58, tipo: 'REM' },
+                            { cantidad: 0, descripcion: 'COMIDA X DIA', valorUnitario: 244835.71, tipo: 'NO_REM' },
+                            { cantidad: 0, descripcion: 'VIAT. COMIDA', valorUnitario: 24483.59, tipo: 'NO_REM' },
+                            { cantidad: 0, descripcion: 'ADIC. VIATICO', valorUnitario: 122858.18, tipo: 'NO_REM' },
+                            { cantidad: 0, descripcion: 'VIAT. VIATICO', valorUnitario: 12285.78, tipo: 'NO_REM' },
+                            { cantidad: 0, descripcion: 'JUBILACION', valorUnitario: 113571.30, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'LEY 19032', valorUnitario: 30973.99, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'OBRA SOCIAL', valorUnitario: 30973.99, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'CUOTA SINDICAL', valorUnitario: 30973.99, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'SEG. SEPELIO', valorUnitario: 15486.99, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'CTA AFILIACION', valorUnitario: 16842.80, tipo: 'DED' },
+                            { cantidad: 0, descripcion: 'ADELANTO', valorUnitario: 218308.98, tipo: 'DED' },
+                        ]
+                    }
+                };
+
+                const concepts = ref([
+                    { cantidad: 0, descripcion: 'SUELDO BASICO', valorUnitario: 800319.44, tipo: 'REM' },
+                ]);
+
+                const isSACMode = ref(false);
+                const sacBestSalary = ref(0);
+
+                // COMPUTED (LOGICA MATEMATICA)
+                const processedConcepts = computed(() => {
+                    return concepts.value.map(c => {
+                        let total = 0;
+                        if (c.cantidad > 0 && c.valorUnitario > 0) {
+                            total = c.cantidad * c.valorUnitario;
+                        } else if (c.valorUnitario > 0) {
+                            total = c.valorUnitario; // Cantidad 0 o 1 asume total = unitario
+                        }
+                        return { ...c, total };
+                    });
+                });
+
+                const totalRemunerativo = computed(() => {
+                    return processedConcepts.value
+                        .filter(c => c.tipo === 'REM')
+                        .reduce((sum, c) => sum + c.total, 0);
+                });
+
+                const totalNoRemunerativo = computed(() => {
+                    return processedConcepts.value
+                        .filter(c => c.tipo === 'NO_REM')
+                        .reduce((sum, c) => sum + c.total, 0);
+                });
+
+                const totalDeducciones = computed(() => {
+                    return processedConcepts.value
+                        .filter(c => c.tipo === 'DED')
+                        .reduce((sum, c) => sum + c.total, 0);
+                });
+
+                const netoPercibir = computed(() => {
+                    return (totalRemunerativo.value + totalNoRemunerativo.value) - totalDeducciones.value;
+                });
+
+                // ACTION: CARGAR EMPLEADO
+                const loadEmployee = (key) => {
+                    if (employeesDB[key]) {
+                        employee.value = { ...employee.value, ...employeesDB[key] };
+                    }
+                };
+
+                // ACTION: CARGAR PRESET (HISTORICO)
+                const loadPreset = (key) => {
+                    const preset = savedReceipts[key];
+                    if (!preset) return;
+
+                    // Cargar Mariela base si no está cargada
+                    loadEmployee('mariela');
+
+                    // Configurar recibo
+                    receipt.value.periodo = preset.periodo;
+                    isSACMode.value = preset.isSac;
+                    concepts.value = JSON.parse(JSON.stringify(preset.concepts)); // Deep copy
+                };
+
+                // ACTION: CALCULAR SAC
+                const calculateSAC = () => {
+                    if (!isSACMode.value || sacBestSalary.value <= 0) return;
+
+                    const medioAguinaldo = sacBestSalary.value / 2;
+
+                    // Limpiar conceptos y poner solo SAC y Deducciones
+                    concepts.value = [
+                        { cantidad: 0, descripcion: 'SAC 2DO SEMESTRE', valorUnitario: medioAguinaldo, tipo: 'REM' },
+                        // Deducciones automáticas sobre el SAC
+                        { cantidad: 0, descripcion: 'JUBILACION (11%)', valorUnitario: medioAguinaldo * 0.11, tipo: 'DED' },
+                        { cantidad: 0, descripcion: 'LEY 19032 (3%)', valorUnitario: medioAguinaldo * 0.03, tipo: 'DED' },
+                        { cantidad: 0, descripcion: 'OBRA SOCIAL (3%)', valorUnitario: medioAguinaldo * 0.03, tipo: 'DED' },
+                        { cantidad: 0, descripcion: 'CUOTA SINDICAL (3%)', valorUnitario: medioAguinaldo * 0.03, tipo: 'DED' },
+                        { cantidad: 0, descripcion: 'SEG. SEPELIO (1.5%)', valorUnitario: medioAguinaldo * 0.015, tipo: 'DED' },
+                    ];
+                };
+
+                // ACTION: CALCULAR DEDUCCIONES AUTOMATICAS (Recibo Normal)
+                const autoCalculateDeductions = () => {
+                    // Filtrar deducciones existentes para no duplicar si ya apretó el boton
+                    const existingRem = concepts.value.filter(c => c.tipo !== 'DED');
+
+                    // Recalcular total remunerativo base
+                    let baseCalculo = 0;
+                    existingRem.forEach(c => {
+                        if (c.tipo === 'REM') baseCalculo += (c.cantidad > 0 ? c.cantidad * c.valorUnitario : c.valorUnitario);
+                    });
+
+                    const deduccionesNuevas = [
+                        { cantidad: 0, descripcion: 'JUBILACION', valorUnitario: baseCalculo * 0.11, tipo: 'DED' },
+                        { cantidad: 0, descripcion: 'LEY 19032', valorUnitario: baseCalculo * 0.03, tipo: 'DED' },
+                        { cantidad: 0, descripcion: 'OBRA SOCIAL', valorUnitario: baseCalculo * 0.03, tipo: 'DED' },
+                        { cantidad: 0, descripcion: 'CUOTA SINDICAL', valorUnitario: baseCalculo * 0.03, tipo: 'DED' },
+                        { cantidad: 0, descripcion: 'SEGURO DE SEPELIO', valorUnitario: baseCalculo * 0.015, tipo: 'DED' },
+                    ];
+
+                    concepts.value = [...existingRem, ...deduccionesNuevas];
+                };
+
+                // HELPER: FORMAT CURRENCY
+                const formatCurrency = (val) => {
+                    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+                };
+
+                const formatCurrencyPlain = (val) => {
+                    // Formato 1.000,00 sin signo $
+                    return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
+                };
+
+                const formatNumber = (val) => {
+                    return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
+                };
+
+                const numeroALetras = (num) => {
+                    // Implementación básica, idealmente usar una librería, pero para este caso basta con mostrar el número formateado con texto
+                    // "SON PESOS: CIENTO CUARENTA MIL..." es muy complejo de hacer en una sola funcion corta.
+                    // Placeholder:
+                    return `(PESOS) ${Math.floor(num)} CON ${Math.round((num - Math.floor(num)) * 100)}/100 CVOS.`;
+                };
+
+                const addConceptSemiblank = (tipo) => {
+                    concepts.value.push({ cantidad: 0, descripcion: 'ITEM NUEVO', valorUnitario: 0, tipo });
+                };
+
+                const removeConcept = (index) => {
+                    concepts.value.splice(index, 1);
+                };
+
+                const printReceipt = () => {
+                    window.print();
+                };
+
+                // AUTO SAVE LOCALLY
+                const saveToLocal = () => {
+                    const data = {
+                        company: company.value,
+                        receipt: receipt.value,
+                        employee: employee.value,
+                        concepts: concepts.value
+                    };
+                    localStorage.setItem('reciboData', JSON.stringify(data));
+                };
+
+                // AUTO LOAD
+                onMounted(() => {
+                    const saved = localStorage.getItem('reciboData');
+                    if (saved) {
+                        try {
+                            const parsed = JSON.parse(saved);
+                            company.value = parsed.company || company.value;
+                            // No sobreescribimos employee/concepts siempre para no perder el estado inicial si es la primera vez, 
+                            // pero aca queremos que persista la ultima sesion.
+                            // receipt.value = parsed.receipt || receipt.value; 
+                            // employee.value = parsed.employee || employee.value;
+                            // concepts.value = parsed.concepts || concepts.value;
+                        } catch (e) { }
+                    }
+                });
+
+                watch([company, receipt, employee, concepts], saveToLocal, { deep: true });
+
+                return {
+                    company, receipt, employee, concepts, isSACMode, sacBestSalary,
+                    processedConcepts, totalRemunerativo, totalNoRemunerativo, totalDeducciones, netoPercibir,
+                    loadEmployee, loadPreset, calculateSAC, autoCalculateDeductions, addConceptSemiblank, removeConcept, printReceipt,
+                    formatCurrency, formatCurrencyPlain, formatNumber, numeroALetras
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
