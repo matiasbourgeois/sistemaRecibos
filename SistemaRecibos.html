@@ -65,29 +65,50 @@
             }
 
             body {
-                background: white;
+                background: white !important;
                 -webkit-print-color-adjust: exact;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+
+            #app,
+            div.flex.h-screen {
+                display: block !important;
+                height: auto !important;
+                overflow: visible !important;
             }
 
             .no-print {
                 display: none !important;
             }
 
+            /* Container of the receipt */
+            div.flex-1.bg-slate-700 {
+                background: transparent !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                display: block !important;
+            }
+
             .print-container {
                 width: 297mm;
                 height: 210mm;
-                margin: 0;
-                padding: 0;
-                transform: none;
-                box-shadow: none;
-                display: flex;
+                margin: 0 !important;
+                padding: 0 !important;
+                transform: none !important;
+                box-shadow: none !important;
+                display: flex !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
             }
 
             .receipt-half {
                 width: 148.5mm;
                 height: 210mm;
                 padding: 5mm;
-                /* Reduced from 12mm */
                 box-sizing: border-box;
                 border: none !important;
             }
@@ -109,19 +130,19 @@
         }
 
         .receipt-border {
-            border: 2px solid #000;
+            border: 1px solid #333;
             height: 100%;
             display: flex;
             flex-direction: column;
-            padding: 8px 12px;
-            /* Reduced top/bottom padding */
+            padding: 10px 14px;
+            /* Increasod for air */
             position: relative;
         }
 
         .table-header {
-            background-color: #f8fafc;
-            border-top: 1.5px solid #000;
-            border-bottom: 1.5px solid #000;
+            background-color: #fcfdfe;
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
         }
 
         .font-mono-condensed {
@@ -245,16 +266,6 @@
                 <div class="flex-1 overflow-y-auto p-4 space-y-6 sidebar-scroll">
 
                     <!-- SECCION: ACCIONES RAPIDAS -->
-                    <div class="grid grid-cols-2 gap-2">
-                        <button @click="saveReceipt"
-                            class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-xs font-bold shadow-sm transition flex items-center justify-center">
-                            <i class="fa-solid fa-save mr-2"></i> GUARDAR
-                        </button>
-                        <button @click="openHistoryModal"
-                            class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded text-xs font-bold shadow-sm transition flex items-center justify-center">
-                            <i class="fa-solid fa-clock-rotate-left mr-2"></i> HISTORIAL
-                        </button>
-                    </div>
 
                     <!-- SECCION 1: LIQUIDACION -->
                     <div class="space-y-3">
@@ -275,18 +286,11 @@
                                         placeholder="2025">
                                 </div>
                             </label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <label class="block">
-                                    <span class="text-[10px] font-bold text-gray-500 uppercase">F. Pago</span>
-                                    <input type="text" v-model="receipt.fechaPago"
-                                        class="w-full px-2 py-1.5 border rounded text-xs mt-1">
-                                </label>
-                                <label class="block">
-                                    <span class="text-[10px] font-bold text-gray-500 uppercase">Sal. Familiar</span>
-                                    <input type="number" v-model.number="receipt.salarioFamiliar"
-                                        class="w-full px-2 py-1.5 border rounded text-xs mt-1" placeholder="0.00">
-                                </label>
-                            </div>
+                            <label class="block mt-3">
+                                <span class="text-[10px] font-bold text-gray-500 uppercase">F. Pago</span>
+                                <input type="text" v-model="receipt.fechaPago"
+                                    class="w-full px-2 py-1.5 border rounded text-xs mt-1">
+                            </label>
                         </div>
                     </div>
 
@@ -350,6 +354,7 @@
                         </div>
                     </div>
 
+
                     <!-- SECCION 3: HERRAMIENTAS ESPECIALES -->
                     <div class="space-y-3">
                         <h3
@@ -374,31 +379,9 @@
                                     </label>
                                 </div>
                             </div>
-                            <button @click="autoCalculateDeductions"
-                                class="w-full bg-slate-800 text-white px-3 py-2.5 rounded text-[10px] font-black hover:bg-slate-700 border-b-4 border-slate-900 transition flex items-center justify-center uppercase tracking-wider">
-                                <i class="fa-solid fa-calculator mr-2"></i> Auto-Calcular Deducciones
-                            </button>
                         </div>
                     </div>
 
-                    <!-- SECCION: SEGURIDAD -->
-                    <div class="space-y-3">
-                        <h3
-                            class="font-bold text-[10px] text-slate-400 uppercase tracking-[2px] border-b border-gray-100 pb-1 flex items-center">
-                            <i class="fa-solid fa-shield-halved mr-2"></i> Seguridad y Datos
-                        </h3>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button @click="exportBackup"
-                                class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded text-[9px] font-bold transition flex items-center justify-center border border-gray-300">
-                                <i class="fa-solid fa-download mr-1.5"></i> BACKUP
-                            </button>
-                            <label
-                                class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded text-[9px] font-bold transition flex items-center justify-center border border-gray-300 cursor-pointer">
-                                <i class="fa-solid fa-upload mr-1.5"></i> RESTAURAR
-                                <input type="file" @change="importBackup" class="hidden" accept=".json">
-                            </label>
-                        </div>
-                    </div>
 
                     <!-- SECCION 4: CONCEPTOS / ITEMS -->
                     <div class="space-y-3">
@@ -458,6 +441,20 @@
                                     class="bg-red-50 text-red-700 px-1 py-1.5 rounded-[4px] text-[9px] font-bold hover:bg-red-100 border border-red-200 uppercase">
                                     + Deducción</button>
                             </div>
+                            <button @click="autoCalculateDeductions"
+                                class="w-full bg-slate-800 text-white px-3 py-2.5 rounded text-[10px] font-black hover:bg-slate-700 border-b-4 border-slate-900 transition flex items-center justify-center uppercase tracking-wider mt-2">
+                                <i class="fa-solid fa-calculator mr-2"></i> Calcular Deducciones
+                            </button>
+                            <div class="grid grid-cols-1 gap-2 mt-2">
+                                <button @click="saveReceipt"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded text-[10px] font-bold shadow-sm transition flex items-center justify-center uppercase">
+                                    <i class="fa-solid fa-save mr-2"></i> Guardar Recibo
+                                </button>
+                                <button @click="openHistoryModal"
+                                    class="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded text-[10px] font-bold shadow-sm transition flex items-center justify-center uppercase">
+                                    <i class="fa-solid fa-clock-rotate-left mr-2"></i> Historial de Recibos
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -483,6 +480,25 @@
                             class="border-t border-slate-700 pt-1 flex justify-between text-[11px] font-bold text-green-400">
                             <span>NETO BOLSILLO:</span>
                             <span class="font-mono">{{ formatCurrency(netoPercibir) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- SECCION: SEGURIDAD -->
+                    <div class="space-y-3 pt-4 border-t border-gray-100">
+                        <h3
+                            class="font-bold text-[10px] text-slate-400 uppercase tracking-[2px] pb-1 flex items-center">
+                            <i class="fa-solid fa-shield-halved mr-2"></i> Seguridad y Datos
+                        </h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button @click="exportBackup"
+                                class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded text-[9px] font-bold transition flex items-center justify-center border border-gray-300">
+                                <i class="fa-solid fa-download mr-1.5"></i> BACKUP
+                            </button>
+                            <label
+                                class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded text-[9px] font-bold transition flex items-center justify-center border border-gray-300 cursor-pointer">
+                                <i class="fa-solid fa-upload mr-1.5"></i> RESTAURAR
+                                <input type="file" @change="importBackup" class="hidden" accept=".json">
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -519,23 +535,25 @@
                                     </div>
                                     <div class="text-right flex flex-col items-end shrink-0">
                                         <div
-                                            class="bg-black text-white px-3 py-1 font-bold text-base mb-0.5 leading-none">
+                                            class="border border-black px-3 py-1 font-bold text-base mb-0.5 leading-none">
                                             {{ type }}</div>
-                                        <p class="text-[7px] font-semibold text-gray-400 uppercase tracking-wider">{{
+                                        <p class="text-[7px] font-medium text-gray-500 uppercase tracking-wider">{{
                                             type === 'DUPLICADO' ? '(Para el Empleado)' : '(Para el Empleador)' }}</p>
                                     </div>
                                 </div>
 
-                                <div class="border-t-2 border-black pt-1 mb-1.5 shrink-0">
-                                    <h2
-                                        class="text-center font-bold text-xl uppercase tracking-[0.2em] mb-1 text-shadow-sm">
+                                <div class="border-t border-black pt-1 mb-1.5 shrink-0">
+                                    <h2 class="text-center font-bold text-lg uppercase tracking-[0.25em] mb-1">
                                         Recibo de Haberes</h2>
                                     <div
-                                        class="grid grid-cols-3 gap-2 text-[9px] font-semibold border-y border-black py-1 px-2 bg-slate-50">
-                                        <div>CUIT: <span class="font-bold">{{ company.cuit }}</span></div>
-                                        <div class="text-center">PERIODO: <span class="text-xs font-bold uppercase">{{
+                                        class="grid grid-cols-12 gap-2 text-[9px] font-medium border-y border-gray-300 py-1.5 px-2 items-center">
+                                        <div class="col-span-3">CUIT: <span class="font-bold">{{ company.cuit }}</span>
+                                        </div>
+                                        <div class="col-span-6 text-center whitespace-nowrap">PERIODO: <span
+                                                class="text-xs font-bold uppercase">{{
                                                 receipt.periodo }}</span></div>
-                                        <div class="text-right">FECHA PAGO: <span class="font-bold">{{ receipt.fechaPago
+                                        <div class="col-span-3 text-right">FECHA PAGO: <span class="font-bold">{{
+                                                receipt.fechaPago
                                                 }}</span></div>
                                     </div>
                                 </div>
@@ -545,55 +563,70 @@
                                     <div class="grid grid-cols-12 gap-y-1.5 text-[9px] items-start px-1">
                                         <div class="col-span-8">
                                             <span
-                                                class="text-gray-400 font-bold uppercase text-[7px] tracking-widest">Apellido
-                                                y Nombre del Trabajador:</span><br>
-                                            <span class="text-sm font-bold uppercase leading-none">{{ employee.nombre
-                                                }}</span>
+                                                class="text-gray-500 font-medium uppercase text-[7px] tracking-widest">Apellido
+                                                y Nombre del Empleado:</span><br>
+                                            <div class="mt-0.5">
+                                                <span class="text-sm font-bold uppercase leading-none">{{
+                                                    employee.nombre
+                                                    }}</span>
+                                            </div>
                                         </div>
                                         <div class="col-span-4 text-right">
                                             <span
-                                                class="text-gray-400 font-bold uppercase text-[7px] tracking-widest">Legajo
+                                                class="text-gray-500 font-medium uppercase text-[7px] tracking-widest">Legajo
                                                 N°:</span><br>
-                                            <span class="text-sm font-bold leading-none">{{ employee.legajo || '---'
-                                                }}</span>
+                                            <div class="mt-0.5">
+                                                <span class="text-sm font-bold leading-none">{{ employee.legajo || '---'
+                                                    }}</span>
+                                            </div>
                                         </div>
-                                        <div class="col-span-12 h-0.5"></div>
+                                        <div class="col-span-12 h-px bg-gray-100 my-0.5"></div>
                                         <div class="col-span-3 border-r border-gray-100">
                                             <span
-                                                class="text-gray-400 font-bold uppercase text-[7px] tracking-widest">C.U.I.L.:</span><br>
-                                            <span class="text-[10px] font-bold">{{ employee.cuil }}</span>
+                                                class="text-gray-500 font-medium uppercase text-[7px] tracking-widest">C.U.I.L.:</span><br>
+                                            <div class="mt-0.5">
+                                                <span class="text-[10px] font-bold">{{ employee.cuil }}</span>
+                                            </div>
                                         </div>
                                         <div class="col-span-3 border-r border-gray-100 text-center">
                                             <span
-                                                class="text-gray-400 font-bold uppercase text-[7px] tracking-widest">Fecha
+                                                class="text-gray-500 font-medium uppercase text-[7px] tracking-widest">Fecha
                                                 Ingreso:</span><br>
-                                            <span class="text-[10px] font-bold">{{ employee.ingreso }}</span>
+                                            <div class="mt-0.5">
+                                                <span class="text-[10px] font-bold">{{ employee.ingreso }}</span>
+                                            </div>
                                         </div>
                                         <div class="col-span-3 border-r border-gray-100 text-center">
                                             <span
-                                                class="text-gray-400 font-bold uppercase text-[7px] tracking-widest">Antigüedad:</span><br>
-                                            <span class="text-[10px] font-bold">{{ employee.antiguedad }} años</span>
+                                                class="text-gray-500 font-medium uppercase text-[7px] tracking-widest">Antigüedad:</span><br>
+                                            <div class="mt-0.5">
+                                                <span class="text-[10px] font-bold">{{ employee.antiguedad }}
+                                                    años</span>
+                                            </div>
                                         </div>
                                         <div class="col-span-3 text-right">
                                             <span
-                                                class="text-gray-400 font-bold uppercase text-[7px] tracking-widest">Categoría
+                                                class="text-gray-500 font-medium uppercase text-[7px] tracking-widest">Categoría
                                                 / Tarea:</span><br>
-                                            <span class="text-[10px] font-bold uppercase">{{ employee.categoria
-                                                }}</span>
+                                            <div class="mt-0.5">
+                                                <span class="text-[10px] font-bold uppercase">{{ employee.categoria
+                                                    }}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="flex-1 flex flex-col border-2 border-black overflow-hidden bg-white">
+                                <div class="flex-1 flex flex-col border border-black overflow-hidden bg-white">
                                     <div
-                                        class="grid grid-cols-24 gap-0 text-[10px] font-bold uppercase table-header p-1 border-b-2 border-black">
+                                        class="grid grid-cols-24 gap-0 text-[9px] font-medium uppercase table-header p-1 border-b border-black">
                                         <div class="col-span-3 text-center border-r border-gray-300">Cant</div>
                                         <div class="col-span-9 px-3 border-r border-gray-300">Concepto</div>
                                         <div
                                             class="col-span-4 text-right px-2 border-r border-gray-300 whitespace-nowrap">
                                             Valor Unit.</div>
-                                        <div class="col-span-4 text-right px-2 border-r border-gray-300">Haberes</div>
-                                        <div class="col-span-4 text-right px-2">Deducciones</div>
+                                        <div class="col-span-4 text-right px-2 border-r border-gray-300 text-gray-700">
+                                            Haberes</div>
+                                        <div class="col-span-4 text-right px-2 text-gray-700">Deducciones</div>
                                     </div>
 
                                     <div class="flex-1 px-0 py-0 overflow-hidden relative">
@@ -621,18 +654,26 @@
                                         </div>
                                     </div>
                                     <!-- TOTALES -->
-                                    <div class="border-t-2 border-black bg-slate-50">
+                                    <div class="border-t border-black">
                                         <div
-                                            class="grid grid-cols-12 gap-0 text-[7px] font-bold uppercase text-center border-b border-gray-300">
-                                            <div class="col-span-2 px-1 py-1 border-r border-gray-200 truncate">Total
+                                            class="grid grid-cols-12 gap-0 text-[7px] font-medium uppercase text-center border-b border-gray-200">
+                                            <div
+                                                class="col-span-2 px-1 py-1 border-r border-gray-200 truncate text-gray-500">
+                                                Total
                                                 Bruto</div>
-                                            <div class="col-span-2 px-1 py-1 border-r border-gray-200 truncate">No
+                                            <div
+                                                class="col-span-2 px-1 py-1 border-r border-gray-200 truncate text-gray-500">
+                                                No
                                                 Remunerat.</div>
-                                            <div class="col-span-2 px-1 py-1 border-r border-gray-200 truncate">Sal.
+                                            <div
+                                                class="col-span-2 px-1 py-1 border-r border-gray-200 truncate text-gray-500">
+                                                Sal.
                                                 Familiar</div>
-                                            <div class="col-span-2 px-1 py-1 border-r border-gray-200 truncate">
+                                            <div
+                                                class="col-span-2 px-1 py-1 border-r border-gray-200 truncate text-gray-500">
                                                 Retenciones</div>
-                                            <div class="col-span-4 px-1 py-1 bg-black text-white truncate">Neto a Cobrar
+                                            <div class="col-span-4 px-1 py-1 border-l border-black font-bold truncate">
+                                                Neto a Cobrar
                                             </div>
                                         </div>
                                         <div class="grid grid-cols-12 gap-0 font-mono-condensed text-center font-bold">
@@ -642,9 +683,9 @@
                                                 formatCurrencyPlain(totalNoRemunerativo) }}</div>
                                             <div class="col-span-2 px-1 py-2 border-r border-gray-200 text-[10px]">{{
                                                 formatCurrencyPlain(receipt.salarioFamiliar || 0) }}</div>
-                                            <div class="col-span-2 px-1 py-2 border-r border-slate-300 text-[10px]">{{
+                                            <div class="col-span-2 px-1 py-2 border-r border-gray-200 text-[10px]">{{
                                                 formatCurrencyPlain(totalDeducciones) }}</div>
-                                            <div class="col-span-4 px-4 py-1 bg-white flex items-center justify-center font-black border-l-2 border-black overflow-hidden"
+                                            <div class="col-span-4 px-4 py-1 flex items-center justify-center font-black border-l border-black overflow-hidden"
                                                 :style="{ fontSize: getDynamicFontSize(formatCurrencyPlain(netoPercibir), 22, 10, 11) + 'px' }">
                                                 {{ formatCurrencyPlain(netoPercibir) }}
                                             </div>
@@ -654,8 +695,8 @@
 
                                 <!-- SON LETRAS -->
                                 <div
-                                    class="mt-1.5 text-[8.5px] font-bold italic border-b border-black pb-0.5 shrink-0 uppercase">
-                                    SON PESOS: {{ numeroALetras(netoPercibir) }}
+                                    class="mt-1.5 text-[8.5px] font-medium italic border-b border-gray-300 pb-0.5 shrink-0 uppercase">
+                                    SON PESOS: <span class="font-bold">{{ numeroALetras(netoPercibir) }}</span>
                                 </div>
 
                                 <div class="mt-0.5 text-[7.5px] font-semibold text-gray-500 italic shrink-0">
@@ -663,17 +704,17 @@
                                 </div>
 
                                 <!-- FIRMAS -->
-                                <div class="mt-6 flex justify-center px-6 pb-2 shrink-0">
+                                <div class="mt-12 flex justify-center px-6 pb-2 shrink-0">
                                     <div v-if="type === 'DUPLICADO'" class="w-7/12 text-center">
-                                        <div class="border-t border-black pt-1">
+                                        <div class="border-t border-black pt-1.5">
                                             <span class="text-[9px] font-bold uppercase text-gray-700">Firma del
                                                 Empleador</span>
                                         </div>
                                     </div>
                                     <div v-if="type === 'ORIGINAL'" class="w-7/12 text-center">
-                                        <div class="border-t border-black pt-1">
-                                            <span class="text-[9px] font-bold uppercase text-gray-700">Firma del Recibo
-                                                (Empleado)</span>
+                                        <div class="border-t border-black pt-1.5">
+                                            <span class="text-[9px] font-bold uppercase text-gray-700">Firma del
+                                                Empleado</span>
                                         </div>
                                     </div>
                                 </div>
@@ -686,7 +727,8 @@
         </div>
 
         <!-- MODAL GESTION EMPRESAS -->
-        <div v-if="showCompanyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div v-if="showCompanyModal"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print">
             <div class="bg-white rounded-lg shadow-xl w-[500px] p-6 max-h-[90vh] overflow-y-auto">
                 <div class="flex justify-between items-center mb-4 border-b pb-2">
                     <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-building mr-2"></i>Gestión de
@@ -772,7 +814,8 @@
         </div>
 
         <!-- MODAL HISTORIAL DE RECIBOS -->
-        <div v-if="showHistoryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div v-if="showHistoryModal"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print">
             <div class="bg-white rounded-lg shadow-xl w-[700px] p-6 max-h-[90vh] overflow-y-auto">
                 <div class="flex justify-between items-center mb-4 border-b pb-2">
                     <h2 class="text-lg font-bold text-slate-800"><i
@@ -825,7 +868,8 @@
         </div>
 
         <!-- MODAL CONFIGURACION DEL SISTEMA -->
-        <div v-if="showConfigModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div v-if="showConfigModal"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print">
             <div class="bg-white rounded-lg shadow-xl w-[450px] p-6">
                 <div class="flex justify-between items-center mb-4 border-b pb-2">
                     <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-sliders mr-2"></i>Configuración
@@ -1095,7 +1139,10 @@
                 const employeeSearchResults = computed(() => {
                     if (!employeeSearch.value) return filteredEmployees.value;
                     const q = employeeSearch.value.toLowerCase();
-                    return filteredEmployees.value.filter(e => e.nombre.toLowerCase().includes(q));
+                    return filteredEmployees.value.filter(e =>
+                        e.nombre.toLowerCase().includes(q) ||
+                        (e.legajo && e.legajo.toString().toLowerCase().includes(q))
+                    );
                 });
 
                 const selectEmployeeSearch = (emp) => {
@@ -1157,7 +1204,8 @@
                     ];
 
                     appConfig.value.deductions.forEach(d => {
-                        if (d.rate > 0) {
+                        // Skip 'afi' (Cuota de Afiliacion) in SAC mode as per user request
+                        if (d.rate > 0 && d.id !== 'afi') {
                             newConcepts.push({
                                 cantidad: 0,
                                 descripcion: `${d.label} (${d.rate}%)`,
