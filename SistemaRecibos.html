@@ -233,149 +233,195 @@
 
                 <!-- Resizer Handle -->
                 <div class="resizer" @mousedown="startResizing" :class="{ 'resizing': isResizing }"></div>
-                <div class="p-4 bg-slate-800 text-white shadow-md">
-                    <div class="flex justify-between items-center mb-2">
-                        <h1 class="font-bold text-lg"><i class="fa-solid fa-file-invoice-dollar mr-2"></i>Recibos</h1>
+
+                <!-- HEADER SIDEBAR (Mantine Style - Fixed Layout) -->
+                <div
+                    class="px-5 py-4 bg-white border-b border-gray-100 sticky top-0 z-40 bg-opacity-90 backdrop-blur-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h1 class="font-black text-lg text-slate-800 tracking-tight flex items-center gap-2">
+                            <div
+                                class="w-8 h-8 rounded-lg bg-cyan-600 flex items-center justify-center text-white shadow-md shadow-cyan-200">
+                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                            </div>
+                            Recibos
+                        </h1>
                         <button @click="printReceipt"
-                            class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs font-bold transition"
+                            class="bg-white hover:bg-gray-50 text-slate-600 border border-gray-200 px-3 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm hover:shadow"
                             title="Imprimir">
-                            <i class="fa-solid fa-print"></i> IMPRIMIR
+                            <i class="fa-solid fa-print mr-1"></i> IMPRIMIR
                         </button>
                     </div>
 
-                    <!-- SELECTOR DE EMPRESA MULTI-COMPANY -->
-                    <div class="flex items-center space-x-2 bg-slate-700 p-1.5 rounded-lg border border-slate-600">
-                        <select v-model="selectedCompanyId"
-                            class="flex-1 bg-transparent text-sm font-semibold outline-none border-none text-white cursor-pointer w-full truncate">
-                            <option v-for="comp in companiesList" :key="comp.id" :value="comp.id"
-                                class="text-slate-800">
-                                {{ comp.razonSocial }}
-                            </option>
-                        </select>
-                        <button @click="openCompanyModal" class="text-slate-300 hover:text-white px-1"
-                            title="Gestionar Empresas">
-                            <i class="fa-solid fa-cog"></i>
-                        </button>
-                        <button @click="openConfigModal" class="text-slate-300 hover:text-white px-1"
-                            title="Configuración del Sistema">
-                            <i class="fa-solid fa-sliders"></i>
-                        </button>
+                    <!-- SELECTOR DE EMPRESA MULTI-COMPANY (Mantine Select) -->
+                    <div class="flex gap-2">
+                        <div class="relative group flex-1">
+                            <i class="fa-solid fa-building absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                            <select v-model="selectedCompanyId"
+                                class="w-full bg-gray-50 hover:bg-white border border-gray-200 rounded-lg pl-9 pr-8 py-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-100 focus:border-cyan-400 transition-all appearance-none cursor-pointer">
+                                <option v-for="comp in companiesList" :key="comp.id" :value="comp.id"
+                                    class="text-slate-800 py-1">
+                                    {{ comp.razonSocial }}
+                                </option>
+                            </select>
+                            <i
+                                class="fa-solid fa-chevron-down absolute right-3 top-3 text-gray-400 text-[10px] pointer-events-none group-hover:text-cyan-500 transition-colors"></i>
+                        </div>
+
+                        <!-- Actions (Toolbar Row) -->
+                        <div class="flex gap-1 shrink-0">
+                            <button @click="openCompanyModal"
+                                class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200 transition bg-white shadow-sm"
+                                title="Gestionar Empresas">
+                                <i class="fa-solid fa-cog text-xs"></i>
+                            </button>
+                            <button @click="openConfigModal"
+                                class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200 transition bg-white shadow-sm"
+                                title="Configuración">
+                                <i class="fa-solid fa-sliders text-xs"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex-1 overflow-y-auto p-4 space-y-6 sidebar-scroll">
-
-                    <!-- SECCION: ACCIONES RAPIDAS -->
+                <div class="flex-1 overflow-y-auto px-5 py-6 space-y-8 sidebar-scroll">
 
                     <!-- SECCION 1: LIQUIDACION -->
-                    <div class="space-y-3">
+                    <div class="space-y-4">
                         <h3
-                            class="font-bold text-[10px] text-slate-400 uppercase tracking-[2px] border-b border-gray-100 pb-1 flex items-center">
-                            <i class="fa-solid fa-calendar-day mr-2"></i> Datos Liquidación
+                            class="font-bold text-[10px] text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                            Datos Liquidación
                         </h3>
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-3">
+                        <div class="bg-white p-1 space-y-4">
                             <label class="block">
-                                <span class="text-[10px] font-bold text-gray-500 uppercase">Periodo</span>
-                                <div class="flex space-x-1 mt-1">
-                                    <select v-model="periodMonth"
-                                        class="flex-1 border rounded px-2 py-1.5 text-xs bg-white uppercase font-semibold">
-                                        <option v-for="m in months" :key="m" :value="m">{{ m }}</option>
-                                    </select>
+                                <span class="text-[11px] font-semibold text-slate-600 mb-1.5 block">Periodo</span>
+                                <div class="flex gap-2">
+                                    <div class="relative flex-1">
+                                        <select v-model="periodMonth"
+                                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white text-slate-700 font-medium outline-none focus:ring-2 focus:ring-indigo-100 transition-all appearance-none uppercase cursor-pointer">
+                                            <option v-for="m in months" :key="m" :value="m">{{ m }}</option>
+                                        </select>
+                                    </div>
                                     <input type="number" v-model="periodYear"
-                                        class="w-20 border rounded px-2 py-1.5 text-xs text-center font-bold"
+                                        class="w-24 border border-gray-200 rounded-lg px-2 py-2 text-xs text-center font-bold text-slate-700 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer hover:bg-white"
                                         placeholder="2025">
                                 </div>
                             </label>
-                            <label class="block mt-3">
-                                <span class="text-[10px] font-bold text-gray-500 uppercase">F. Pago</span>
+                            <label class="block">
+                                <span class="text-[11px] font-semibold text-slate-600 mb-1.5 block">Fecha de Pago</span>
                                 <input type="text" v-model="receipt.fechaPago"
-                                    class="w-full px-2 py-1.5 border rounded text-xs mt-1">
+                                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-medium text-slate-700 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-100 transition-all placeholder-gray-400">
                             </label>
                         </div>
                     </div>
 
                     <!-- SECCION 2: EMPLEADO -->
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center border-b border-gray-100 pb-1">
-                            <h3 class="font-bold text-[10px] text-slate-400 uppercase tracking-[2px] flex items-center">
-                                <i class="fa-solid fa-user-tie mr-2"></i> Empleado
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end">
+                            <h3
+                                class="font-bold text-[10px] text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                Empleado
                             </h3>
-                            <button @click="openNewEmployeeModal"
-                                class="text-blue-600 font-bold text-[10px] hover:underline">+ NUEVO</button>
+                            <div>
+                                <button @click="openEditEmployeeModal"
+                                    class="text-slate-400 hover:text-cyan-600 font-bold text-[10px] px-2 py-1 transition-colors mr-1"
+                                    title="Editar datos">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button @click="openNewEmployeeModal"
+                                    class="text-cyan-600 font-bold text-[10px] bg-cyan-50 px-2 py-1 rounded hover:bg-cyan-100 transition-colors border border-cyan-100">
+                                    + NUEVO
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-3">
+                        <div class="bg-white p-1 space-y-3">
                             <!-- Buscador -->
-                            <div class="relative" ref="searchContainer">
+                            <div class="relative group" ref="searchContainer">
                                 <input type="text" v-model="employeeSearch" @focus="showEmployeeList = true"
                                     @keyup.esc="showEmployeeList = false" placeholder="BUSCAR EMPLEADO..."
-                                    class="w-full border border-gray-300 rounded px-2 py-2 text-[11px] font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none uppercase bg-white shadow-sm">
+                                    class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-cyan-100 focus:border-cyan-400 outline-none uppercase bg-gray-50 focus:bg-white shadow-sm transition-all group-hover:border-cyan-300">
                                 <i
-                                    class="fa-solid fa-search absolute right-3 top-2.5 text-gray-300 text-xs pointer-events-none"></i>
+                                    class="fa-solid fa-search absolute right-3 top-3 text-gray-300 text-xs pointer-events-none group-hover:text-cyan-500 transition-colors"></i>
 
                                 <div v-if="showEmployeeList"
-                                    class="absolute w-full bg-white border border-gray-200 rounded-b shadow-xl z-20 max-h-48 overflow-y-auto mt-1">
+                                    class="absolute w-full bg-white border border-gray-100 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto mt-2 p-1 custom-scrollbar">
                                     <div v-for="emp in employeeSearchResults" :key="emp.id"
                                         @click="selectEmployeeSearch(emp)"
-                                        class="px-3 py-2 text-[11px] hover:bg-blue-50 cursor-pointer border-b border-gray-50 text-slate-700 flex justify-between items-center transition">
-                                        <span class="font-bold truncate">{{ emp.nombre }}</span>
+                                        class="px-3 py-2.5 text-[11px] hover:bg-cyan-50 cursor-pointer rounded-lg text-slate-700 flex justify-between items-center transition mb-0.5 last:mb-0 group">
+                                        <span class="font-bold truncate group-hover:text-cyan-700">{{ emp.nombre
+                                            }}</span>
                                         <span
-                                            class="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-400 font-mono">{{
+                                            class="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-mono border border-gray-200 group-hover:border-cyan-200 group-hover:bg-white group-hover:text-cyan-600">{{
                                             emp.legajo }}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="space-y-2 pt-2 border-t">
-                                <input type="text" v-model="employee.nombre"
-                                    class="w-full px-2 py-1.5 border rounded font-bold text-xs uppercase"
+                            <div class="space-y-2 pt-2 relative">
+                                <!-- Overlay de Seguridad (Read Only Hint) -->
+                                <div v-if="!isEditingEmployee"
+                                    class="absolute inset-0 z-10 bg-slate-50/10 cursor-not-allowed"
+                                    title="Para editar, use el botón EDITAR"></div>
+
+                                <input type="text" v-model="employee.nombre" readonly
+                                    class="w-full px-3 py-2 border border-gray-200 rounded-lg font-bold text-xs uppercase bg-gray-50 text-slate-500 focus:outline-none cursor-default"
                                     placeholder="NOMBRE COMPLETO">
                                 <div class="grid grid-cols-2 gap-2">
-                                    <input type="text" v-model="employee.cuil"
-                                        class="w-full px-2 py-1.5 border rounded text-xs" placeholder="CUIL">
-                                    <input type="text" v-model="employee.legajo"
-                                        class="w-full px-2 py-1.5 border rounded text-xs" placeholder="LEGAJO">
+                                    <input type="text" v-model="employee.cuil" readonly
+                                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 text-slate-500 focus:outline-none cursor-default"
+                                        placeholder="CUIL">
+                                    <input type="text" v-model="employee.legajo" readonly
+                                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 text-slate-500 focus:outline-none cursor-default"
+                                        placeholder="LEGAJO">
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <input type="text" v-model="employee.ingreso"
-                                        class="w-full px-2 py-1.5 border rounded text-xs" placeholder="F. INGRESO">
-                                    <input type="text" v-model="employee.antiguedad"
-                                        class="w-full px-2 py-1.5 border rounded text-xs" placeholder="ANTIGÜEDAD">
+                                    <input type="text" v-model="employee.ingreso" readonly
+                                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 text-slate-500 focus:outline-none cursor-default"
+                                        placeholder="F. INGRESO">
+                                    <input type="text" v-model="employee.antiguedad" readonly
+                                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 text-slate-500 focus:outline-none cursor-default"
+                                        placeholder="ANTIGÜEDAD">
                                 </div>
-                                <input type="text" v-model="employee.categoria"
-                                    class="w-full px-2 py-1.5 border rounded text-[11px] uppercase font-semibold text-slate-500"
+                                <input type="text" v-model="employee.categoria" readonly
+                                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[11px] uppercase font-semibold text-slate-500 bg-gray-50 focus:outline-none cursor-default"
                                     placeholder="CATEGORÍA">
 
-                                <button @click="updateCurrentEmployee"
-                                    class="w-full bg-white hover:bg-slate-50 text-slate-600 text-[10px] font-bold py-1.5 rounded border border-slate-200 shadow-sm transition mt-1 uppercase">
-                                    <i class="fa-solid fa-user-check mr-1"></i> Guardar Cambios
-                                </button>
+                                <!-- Removed Guardar Update Local button since now it is read only -->
+                                <!-- <button @click="updateCurrentEmployee" ... > -->
                             </div>
                         </div>
                     </div>
 
 
                     <!-- SECCION 3: HERRAMIENTAS ESPECIALES -->
-                    <div class="space-y-3">
+                    <div class="space-y-4">
                         <h3
-                            class="font-bold text-[10px] text-slate-400 uppercase tracking-[2px] border-b border-gray-100 pb-1 flex items-center">
-                            <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Herramientas
+                            class="font-bold text-[10px] text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-violet-400"></span>
+                            Herramientas
                         </h3>
                         <div class="grid grid-cols-1 gap-3">
-                            <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+                            <div
+                                class="bg-violet-50/50 border border-violet-100 rounded-xl p-3 hover:border-violet-200 transition-colors">
                                 <label class="flex items-center space-x-2 cursor-pointer mb-2">
                                     <input type="checkbox" v-model="isSACMode"
-                                        class="form-checkbox h-4 w-4 text-indigo-600 rounded">
-                                    <span class="font-bold text-indigo-900 text-[11px] uppercase">Modo SAC
+                                        class="form-checkbox h-4 w-4 text-violet-600 rounded border-violet-300 focus:ring-violet-500">
+                                    <span class="font-bold text-violet-900 text-[11px] uppercase">Modo SAC
                                         (Aguinaldo)</span>
                                 </label>
-                                <div v-if="isSACMode" class="mt-2 space-y-2 animate-in fade-in duration-300">
+                                <div v-if="isSACMode"
+                                    class="mt-2 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                                     <label class="block">
-                                        <span class="text-[9px] font-bold text-indigo-700 uppercase">Mejor Sueldo
+                                        <span class="text-[9px] font-bold text-violet-700 uppercase">Mejor Sueldo
                                             Semestre</span>
-                                        <input type="number" v-model.number="sacBestSalary" @input="calculateSAC"
-                                            class="w-full px-2 py-1.5 border border-indigo-200 rounded focus:ring-2 ring-indigo-500 text-xs mt-1 bg-white font-bold"
-                                            placeholder="$$$">
+                                        <div class="relative mt-1">
+                                            <span class="absolute left-3 top-2 text-violet-400 text-xs">$</span>
+                                            <input type="number" v-model.number="sacBestSalary" @input="calculateSAC"
+                                                class="w-full pl-6 pr-3 py-2 border border-violet-200 rounded-lg focus:ring-2 ring-violet-400 text-xs bg-white font-bold text-violet-800 outline-none"
+                                                placeholder="0.00">
+                                        </div>
                                     </label>
                                 </div>
                             </div>
@@ -384,31 +430,32 @@
 
 
                     <!-- SECCION 4: CONCEPTOS / ITEMS -->
-                    <div class="space-y-3">
+                    <div class="space-y-4">
                         <h3
-                            class="font-bold text-[10px] text-slate-400 uppercase tracking-[2px] border-b border-gray-100 pb-1 flex items-center">
-                            <i class="fa-solid fa-list-ul mr-2"></i> Conceptos del Recibo
+                            class="font-bold text-[10px] text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                            Conceptos del Recibo
                         </h3>
 
-                        <div class="bg-white border border-gray-200 rounded-lg p-2 shadow-sm space-y-1.5">
+                        <div class="bg-white space-y-2">
                             <div v-for="(item, index) in concepts" :key="index"
-                                class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded group border border-transparent hover:border-slate-200 transition-all">
+                                class="flex items-center space-x-2 p-1 group hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition-all">
 
                                 <div class="w-12">
                                     <input type="number" v-model="item.cantidad"
-                                        class="w-full text-[10px] border rounded px-1 py-1 font-mono text-center bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-400 outline-none"
+                                        class="w-full text-[10px] border border-gray-200 rounded px-1 py-1.5 font-mono text-center bg-gray-50 focus:bg-white focus:ring-1 focus:ring-blue-400 outline-none transition-all placeholder-gray-300"
                                         placeholder="0">
                                 </div>
 
                                 <div class="flex-1">
                                     <input type="text" v-model="item.descripcion"
-                                        class="w-full text-[10px] border rounded px-2 py-1 font-bold uppercase focus:ring-1 focus:ring-blue-400 outline-none"
-                                        placeholder="Descripción">
+                                        class="w-full text-[10px] border border-gray-200 rounded px-2 py-1.5 font-bold uppercase focus:ring-1 focus:ring-blue-400 outline-none transition-all placeholder-gray-300 focus:bg-white bg-transparent"
+                                        placeholder="DESCRIPCIÓN">
                                 </div>
 
-                                <div class="w-20">
+                                <div class="w-24">
                                     <select v-model="item.tipo"
-                                        class="w-full text-[9px] border rounded px-1 py-1 bg-gray-50 font-bold outline-none cursor-pointer">
+                                        class="w-full text-[9px] border border-gray-200 rounded px-1 py-1.5 bg-gray-50 font-bold outline-none cursor-pointer text-slate-600 focus:ring-1 focus:ring-blue-400">
                                         <option value="REM">REMUNERAT.</option>
                                         <option value="NO_REM">NO REMUN.</option>
                                         <option value="DED">DEDUCCIÓN</option>
@@ -417,69 +464,111 @@
 
                                 <div class="w-24">
                                     <div class="relative">
-                                        <span class="absolute left-1.5 top-1.5 text-[9px] text-gray-400">$</span>
+                                        <span class="absolute left-2 top-1.5 text-[9px] text-gray-400">$</span>
                                         <input type="number" v-model.number="item.valorUnitario"
-                                            class="w-full text-[10px] border rounded pl-4 pr-1 py-1 text-right font-mono font-bold bg-blue-50 focus:bg-white focus:ring-1 focus:ring-blue-400 outline-none"
+                                            class="w-full text-[10px] border border-gray-200 rounded pl-4 pr-2 py-1.5 text-right font-mono font-bold bg-white focus:ring-1 focus:ring-blue-400 outline-none transition-all placeholder-gray-300 shadow-sm"
                                             placeholder="0.00">
                                     </div>
                                 </div>
 
                                 <button @click="removeConcept(index)"
-                                    class="text-red-300 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition">
+                                    class="text-red-300 hover:text-red-500 w-6 h-6 flex items-center justify-center rounded hover:bg-red-50 opacity-0 group-hover:opacity-100 transition">
                                     <i class="fa-solid fa-trash-can text-[10px]"></i>
                                 </button>
                             </div>
 
-                            <div class="grid grid-cols-3 gap-1 pt-2">
+                            <div class="grid grid-cols-3 gap-2 pt-2">
                                 <button @click="addConceptSemiblank('REM')"
-                                    class="bg-blue-50 text-blue-700 px-1 py-1.5 rounded-[4px] text-[9px] font-bold hover:bg-blue-100 border border-blue-200 uppercase">
-                                    + Hab. Rem</button>
+                                    class="bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 px-2 py-2.5 rounded-xl text-[9px] font-black border border-gray-200 hover:border-cyan-200 transition-all uppercase shadow-sm flex flex-col items-center gap-1 group">
+                                    <i
+                                        class="fa-solid fa-plus text-cyan-400 group-hover:scale-110 transition-transform"></i>
+                                    Hab. Rem
+                                </button>
                                 <button @click="addConceptSemiblank('NO_REM')"
-                                    class="bg-green-50 text-green-700 px-1 py-1.5 rounded-[4px] text-[9px] font-bold hover:bg-green-100 border border-green-200 uppercase">
-                                    + Hab. No R</button>
+                                    class="bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 px-2 py-2.5 rounded-xl text-[9px] font-black border border-gray-200 hover:border-cyan-200 transition-all uppercase shadow-sm flex flex-col items-center gap-1 group">
+                                    <i
+                                        class="fa-solid fa-asterisk text-cyan-400 group-hover:scale-110 transition-transform"></i>
+                                    No Rem
+                                </button>
                                 <button @click="addConceptSemiblank('DED')"
-                                    class="bg-red-50 text-red-700 px-1 py-1.5 rounded-[4px] text-[9px] font-bold hover:bg-red-100 border border-red-200 uppercase">
-                                    + Deducción</button>
+                                    class="bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 px-2 py-2.5 rounded-xl text-[9px] font-black border border-gray-200 hover:border-rose-200 transition-all uppercase shadow-sm flex flex-col items-center gap-1 group">
+                                    <i
+                                        class="fa-solid fa-minus text-rose-400 group-hover:scale-110 transition-transform"></i>
+                                    Deducción
+                                </button>
                             </div>
+
                             <button @click="autoCalculateDeductions"
-                                class="w-full bg-slate-800 text-white px-3 py-2.5 rounded text-[10px] font-black hover:bg-slate-700 border-b-4 border-slate-900 transition flex items-center justify-center uppercase tracking-wider mt-2">
-                                <i class="fa-solid fa-calculator mr-2"></i> Calcular Deducciones
+                                class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white px-3 py-3 rounded-xl text-[10px] font-black hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center uppercase tracking-wider mt-4 shadow-md group">
+                                <i class="fa-solid fa-wand-magic-sparkles mr-2 group-hover:animate-pulse"></i> Calcular
+                                Deducciones
                             </button>
+
                             <div class="grid grid-cols-1 gap-2 mt-2">
                                 <button @click="saveReceipt"
-                                    class="bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded text-[10px] font-bold shadow-sm transition flex items-center justify-center uppercase">
-                                    <i class="fa-solid fa-save mr-2"></i> Guardar Recibo
+                                    class="bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl text-[10px] font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center uppercase border border-slate-700">
+                                    <i class="fa-solid fa-floppy-disk mr-2 text-cyan-400"></i> Guardar Recibo
                                 </button>
                                 <button @click="openHistoryModal"
-                                    class="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded text-[10px] font-bold shadow-sm transition flex items-center justify-center uppercase">
-                                    <i class="fa-solid fa-clock-rotate-left mr-2"></i> Historial de Recibos
+                                    class="bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 border border-slate-200 hover:border-cyan-200 py-3 rounded-xl text-[10px] font-bold shadow-sm hover:shadow-md transition-all flex items-center justify-center uppercase">
+                                    <i class="fa-solid fa-clock-rotate-left mr-2"></i> Historial
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- TOTALES DEBUG -->
-                    <div class="bg-slate-900 text-slate-300 p-3 rounded-lg space-y-1 shadow-inner">
-                        <div class="flex justify-between text-[10px]">
-                            <span>TOTAL BRUTO:</span>
-                            <span class="font-mono text-white">{{ formatCurrency(totalRemunerativo) }}</span>
-                        </div>
-                        <div class="flex justify-between text-[10px]">
-                            <span>NO REMUNERATIVO:</span>
-                            <span class="font-mono text-white">{{ formatCurrency(totalNoRemunerativo) }}</span>
-                        </div>
-                        <div v-if="receipt.salarioFamiliar > 0" class="flex justify-between text-[10px]">
-                            <span>S. FAMILIAR:</span>
-                            <span class="font-mono text-white">{{ formatCurrency(receipt.salarioFamiliar) }}</span>
-                        </div>
-                        <div class="flex justify-between text-[10px]">
-                            <span>DEDUCCIONES:</span>
-                            <span class="font-mono text-red-400">-{{ formatCurrency(totalDeducciones) }}</span>
+                    <!-- TOTALES CARD (Premium Gradient - Level God) -->
+                    <div
+                        class="bg-gradient-to-br from-slate-900 via-cyan-950 to-blue-900 rounded-2xl p-5 shadow-xl shadow-cyan-900/20 relative overflow-hidden group border border-white/10 ring-1 ring-white/5">
+
+                        <!-- Premium Glass Effects -->
+                        <div
+                            class="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-cyan-500/20 rounded-full blur-[50px] mix-blend-screen group-hover:bg-cyan-400/30 transition-all duration-700">
                         </div>
                         <div
-                            class="border-t border-slate-700 pt-1 flex justify-between text-[11px] font-bold text-green-400">
-                            <span>NETO BOLSILLO:</span>
-                            <span class="font-mono">{{ formatCurrency(netoPercibir) }}</span>
+                            class="absolute bottom-0 left-0 -mb-8 -ml-8 w-32 h-32 bg-blue-600/20 rounded-full blur-[40px] mix-blend-screen group-hover:bg-blue-500/30 transition-all duration-700">
+                        </div>
+
+                        <!-- Texture Overlay -->
+                        <div class="absolute inset-0 opacity-[0.03]"
+                            style="background-image: url('data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'3\' cy=\'3\' r=\'1\'/%3E%3C/g%3E%3C/svg%3E');">
+                        </div>
+
+                        <div class="relative z-10 space-y-4">
+                            <!-- Header -->
+                            <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                                <span
+                                    class="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-200/80 drop-shadow-sm">Neto
+                                    a Percibir</span>
+                                <div
+                                    class="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-cyan-300 shadow-inner border border-white/10 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-wallet text-xs"></i>
+                                </div>
+                            </div>
+
+                            <!-- Main Amount -->
+                            <div
+                                class="text-[2.5rem] font-black text-white tracking-tighter font-mono leading-none drop-shadow-lg flex items-baseline gap-1">
+                                <span class="text-xl text-cyan-500/80 font-bold">$</span>
+                                {{ formatCurrencyPlain(netoPercibir) }}
+                            </div>
+
+                            <!-- Details Grid -->
+                            <div class="grid grid-cols-2 gap-3 pt-1">
+                                <div class="bg-white/5 rounded-lg p-2 border border-white/5 backdrop-blur-sm">
+                                    <span
+                                        class="block text-[8px] font-bold text-cyan-200/60 uppercase tracking-wide mb-0.5">Haberes</span>
+                                    <span class="block text-xs font-bold text-emerald-400 font-mono tracking-tight">{{
+                                        formatCurrency(totalRemunerativo + totalNoRemunerativo) }}</span>
+                                </div>
+                                <div
+                                    class="bg-white/5 rounded-lg p-2 border border-white/5 backdrop-blur-sm text-right">
+                                    <span
+                                        class="block text-[8px] font-bold text-rose-200/60 uppercase tracking-wide mb-0.5">Retenciones</span>
+                                    <span class="block text-xs font-bold text-rose-400 font-mono tracking-tight">-{{
+                                        formatCurrency(totalDeducciones) }}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -491,12 +580,12 @@
                         </h3>
                         <div class="grid grid-cols-2 gap-2">
                             <button @click="exportBackup"
-                                class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded text-[9px] font-bold transition flex items-center justify-center border border-gray-300">
-                                <i class="fa-solid fa-download mr-1.5"></i> BACKUP
+                                class="bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 py-2 rounded-xl text-[9px] font-bold transition flex items-center justify-center border border-slate-200 hover:border-cyan-200 shadow-sm gap-1.5">
+                                <i class="fa-solid fa-download text-cyan-400"></i> BACKUP
                             </button>
                             <label
-                                class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded text-[9px] font-bold transition flex items-center justify-center border border-gray-300 cursor-pointer">
-                                <i class="fa-solid fa-upload mr-1.5"></i> RESTAURAR
+                                class="bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 py-2 rounded-xl text-[9px] font-bold transition flex items-center justify-center border border-slate-200 hover:border-cyan-200 shadow-sm cursor-pointer gap-1.5">
+                                <i class="fa-solid fa-upload text-cyan-400"></i> RESTAURAR
                                 <input type="file" @change="importBackup" class="hidden" accept=".json">
                             </label>
                         </div>
@@ -631,7 +720,7 @@
 
                                     <div class="flex-1 px-0 py-0 overflow-hidden relative">
                                         <div v-for="(item, index) in processedConcepts" :key="index"
-                                            class="grid grid-cols-24 gap-0 text-[10px] items-center border-b border-gray-100 last:border-0 h-[21.5px]">
+                                            class="grid grid-cols-24 gap-0 text-[10px] items-center border-b border-gray-100 last:border-0 h-[17px]">
                                             <div
                                                 class="col-span-3 text-center font-mono-condensed font-medium text-gray-400 border-r border-gray-100 h-full flex items-center justify-center px-1">
                                                 {{ item.cantidad > 0 ? formatNumber(item.cantidad) : '' }}</div>
@@ -726,211 +815,422 @@
             </div>
         </div>
 
-        <!-- MODAL GESTION EMPRESAS -->
-        <div v-if="showCompanyModal"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print">
-            <div class="bg-white rounded-lg shadow-xl w-[500px] p-6 max-h-[90vh] overflow-y-auto">
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-building mr-2"></i>Gestión de
-                        Empresas</h2>
-                    <button @click="closeCompanyModal" class="text-gray-500 hover:text-gray-700"><i
-                            class="fa-solid fa-times"></i></button>
-                </div>
-                <!-- LISTA -->
-                <div class="mb-6 space-y-2">
-                    <div v-for="comp in companiesList" :key="comp.id"
-                        class="flex justify-between items-center p-3 bg-gray-50 rounded border border-gray-200">
+        <!-- MODAL GESTION EMPRESAS (GOD TIER) -->
+        <transition name="toast">
+            <div v-if="showCompanyModal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+                <!-- Backdrop -->
+                <div @click="closeCompanyModal"
+                    class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"></div>
+
+                <!-- Modal Card -->
+                <div
+                    class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100">
+                    <div class="bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center">
                         <div>
-                            <h3 class="font-bold text-sm text-indigo-700">{{ comp.razonSocial }}</h3>
-                            <p class="text-[10px] text-gray-500">CUIT: {{ comp.cuit }}</p>
+                            <h2
+                                class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                                <i class="fa-solid fa-building text-cyan-500"></i> Empresas
+                            </h2>
+                            <p class="text-slate-400 text-xs font-medium">Gestioná tus entidades comerciales</p>
                         </div>
-                        <div class="flex space-x-2">
-                            <button @click="editCompany(comp)" class="text-blue-500 hover:text-blue-700 text-sm"><i
-                                    class="fa-solid fa-pen"></i></button>
-                            <button v-if="companiesList.length > 1" @click="deleteCompany(comp.id)"
-                                class="text-red-500 hover:text-red-700 text-sm"><i
-                                    class="fa-solid fa-trash"></i></button>
+                        <button @click="closeCompanyModal"
+                            class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                        <!-- LISTA -->
+                        <div class="space-y-3 mb-6">
+                            <div v-for="comp in companiesList" :key="comp.id"
+                                class="flex justify-between items-center p-4 bg-slate-50 hover:bg-white rounded-2xl border border-slate-100 hover:border-cyan-200 transition-all group shadow-sm">
+                                <div>
+                                    <h3
+                                        class="font-bold text-sm text-slate-700 group-hover:text-cyan-600 transition-colors">
+                                        {{ comp.razonSocial }}</h3>
+                                    <p class="text-[10px] text-slate-400 font-medium tracking-wide">CUIT: {{ comp.cuit
+                                        }}</p>
+                                </div>
+                                <div class="flex space-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                    <button @click="editCompany(comp)"
+                                        class="w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition"><i
+                                            class="fa-solid fa-pen text-xs"></i></button>
+                                    <button v-if="companiesList.length > 1" @click="deleteCompany(comp.id)"
+                                        class="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition"><i
+                                            class="fa-solid fa-trash text-xs"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FORMULARIO -->
+                        <div class="bg-cyan-50/50 p-6 rounded-3xl border border-cyan-100/50">
+                            <h3
+                                class="font-bold text-xs text-cyan-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+                                {{ isEditingCompany ? 'Editar Empresa' : 'Nueva Empresa' }}
+                            </h3>
+
+                            <div class="space-y-4">
+                                <div class="space-y-1">
+                                    <label
+                                        class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Razón
+                                        Social</label>
+                                    <input type="text" v-model="companyForm.razonSocial"
+                                        class="w-full px-4 py-2.5 bg-white border border-cyan-100 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700 uppercase shadow-sm">
+                                </div>
+
+                                <div class="space-y-1">
+                                    <label
+                                        class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">CUIT</label>
+                                    <input type="text" v-model="companyForm.cuit"
+                                        class="w-full px-4 py-2.5 bg-white border border-cyan-100 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all font-mono text-xs font-medium text-slate-700 shadow-sm">
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-1">
+                                        <label
+                                            class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Domicilio</label>
+                                        <input type="text" v-model="companyForm.domicilio"
+                                            class="w-full px-4 py-2.5 bg-white border border-cyan-100 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all text-xs font-semibold text-slate-700 uppercase shadow-sm">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label
+                                            class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Lugar
+                                            Pago</label>
+                                        <input type="text" v-model="companyForm.lugarPago"
+                                            class="w-full px-4 py-2.5 bg-white border border-cyan-100 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all text-xs font-semibold text-slate-700 uppercase shadow-sm">
+                                    </div>
+                                </div>
+
+                                <div class="pt-2">
+                                    <label
+                                        class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 block mb-2">Logo</label>
+                                    <div
+                                        class="flex items-center space-x-4 bg-white p-3 rounded-2xl border border-indigo-100 shadow-sm">
+                                        <div v-if="companyForm.logo"
+                                            class="h-12 w-12 rounded-lg border border-slate-100 p-1 flex items-center justify-center bg-slate-50">
+                                            <img :src="companyForm.logo" class="max-h-full max-w-full object-contain">
+                                        </div>
+                                        <div v-else
+                                            class="h-12 w-12 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300">
+                                            <i class="fa-solid fa-image"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <input type="file" @change="handleLogoUpload" accept="image/*"
+                                                class="text-xs w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                                        </div>
+                                        <button v-if="companyForm.logo" @click="companyForm.logo = null"
+                                            class="text-slate-400 hover:text-red-500 transition"><i
+                                                class="fa-solid fa-trash-can"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex justify-end space-x-3">
+                                <button v-if="isEditingCompany" @click="cancelEditCompany"
+                                    class="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 transition">CANCELAR</button>
+                                <button @click="saveCompanyForm"
+                                    class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 hover:scale-105 active:scale-95 transition-all uppercase tracking-wide">
+                                    {{ isEditingCompany ? 'Guardar Cambios' : 'Crear Empresa' }}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- FORMULARIO -->
-                <div class="bg-indigo-50 p-4 rounded border border-indigo-100">
-                    <h3 class="font-bold text-xs text-indigo-800 uppercase mb-3">{{ isEditingCompany ? 'Editar Empresa'
-                        : 'Nueva Empresa' }}</h3>
-                    <div class="space-y-3">
+            </div>
+        </transition>
+
+        <!-- MODAL HISTORIAL DE RECIBOS (GOD TIER) -->
+        <transition name="toast">
+            <div v-if="showHistoryModal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+                <!-- Backdrop -->
+                <div @click="closeHistoryModal"
+                    class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"></div>
+
+                <div
+                    class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100 flex flex-col max-h-[85vh]">
+                    <div
+                        class="bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center shrink-0">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">Razón Social</label>
-                            <input type="text" v-model="companyForm.razonSocial"
-                                class="w-full border rounded px-2 py-1 text-sm outline-none uppercase bg-white">
+                            <h2
+                                class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                                <i class="fa-solid fa-clock-rotate-left text-cyan-500"></i> Historial de Recibos
+                            </h2>
+                            <p class="text-slate-400 text-xs font-medium">Registro de recibos generados para <span
+                                    class="text-cyan-600 font-bold">{{ company.razonSocial }}</span></p>
                         </div>
+                        <button @click="closeHistoryModal"
+                            class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="overflow-auto custom-scrollbar flex-1 p-0">
+                        <div v-if="filteredHistory.length === 0"
+                            class="flex flex-col items-center justify-center py-20 text-slate-300">
+                            <i class="fa-solid fa-folder-open text-5xl mb-4"></i>
+                            <p class="text-sm font-medium">No hay recibos guardados todavía.</p>
+                        </div>
+
+                        <table v-else class="w-full text-left border-collapse">
+                            <thead
+                                class="bg-slate-50 sticky top-0 z-10 text-[10px] font-black uppercase text-slate-400 tracking-wider shadow-sm">
+                                <tr>
+                                    <th class="px-6 py-4 font-black">Fecha</th>
+                                    <th class="px-6 py-4 font-black">Periodo</th>
+                                    <th class="px-6 py-4 font-black">Empleado</th>
+                                    <th class="px-6 py-4 font-black text-right">Neto</th>
+                                    <th class="px-6 py-4 font-black text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="rec in filteredHistory" :key="rec.id"
+                                    class="hover:bg-slate-50/80 transition-colors group">
+                                    <td class="px-6 py-3 text-xs font-mono text-slate-500">
+                                        {{ new Date(rec.timestamp).toLocaleDateString() }}
+                                        <span class="text-[10px] text-slate-300 ml-1">{{ new
+                                            Date(rec.timestamp).toLocaleTimeString([], {hour: '2-digit',
+                                            minute:'2-digit'}) }}</span>
+                                    </td>
+                                    <td class="px-6 py-3">
+                                        <span
+                                            class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md text-[10px] font-bold uppercase">{{
+                                            rec.receiptData.periodo }}</span>
+                                    </td>
+                                    <td class="px-6 py-3">
+                                        <span class="font-bold text-slate-700 text-xs">{{ rec.employee.nombre }}</span>
+                                        <div class="text-[10px] text-slate-400">{{ rec.employee.categoria }}</div>
+                                    </td>
+                                    <td class="px-6 py-3 text-right">
+                                        <span class="font-mono font-bold text-slate-800 tracking-tight">{{
+                                            formatCurrency(rec.totals.neto) }}</span>
+                                    </td>
+                                    <td class="px-6 py-3">
+                                        <div
+                                            class="flex justify-center space-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                            <button @click="loadFromHistory(rec)"
+                                                class="w-8 h-8 rounded-full bg-white border border-slate-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200 flex items-center justify-center transition shadow-sm"
+                                                title="Cargar">
+                                                <i class="fa-solid fa-upload text-xs"></i>
+                                            </button>
+                                            <button @click="deleteFromHistory(rec.id)"
+                                                class="w-8 h-8 rounded-full bg-white border border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200 flex items-center justify-center transition shadow-sm"
+                                                title="Eliminar">
+                                                <i class="fa-solid fa-trash text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- MODAL CONFIGURACION DEL SISTEMA (GOD TIER) -->
+        <transition name="toast">
+            <div v-if="showConfigModal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+                <!-- Backdrop -->
+                <div @click="closeConfigModal"
+                    class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"></div>
+
+                <!-- Modal Card -->
+                <div
+                    class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100 flex flex-col max-h-[85vh]">
+                    <div
+                        class="bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center shrink-0">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">CUIT</label>
-                            <input type="text" v-model="companyForm.cuit"
-                                class="w-full border rounded px-2 py-1 text-sm outline-none bg-white">
+                            <h2
+                                class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                                <i class="fa-solid fa-sliders text-cyan-500"></i> Configuración
+                            </h2>
+                            <p class="text-slate-400 text-xs font-medium">Ajustes globales del sistema</p>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Domicilio</label>
-                                <input type="text" v-model="companyForm.domicilio"
-                                    class="w-full border rounded px-2 py-1 text-sm outline-none uppercase bg-white">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Lugar Pago</label>
-                                <input type="text" v-model="companyForm.lugarPago"
-                                    class="w-full border rounded px-2 py-1 text-sm outline-none uppercase bg-white">
-                            </div>
-                        </div>
-                        <div class="pt-2 border-t mt-2">
-                            <label class="block text-xs font-bold text-indigo-700 mb-2 uppercase">Logo de
-                                Empresa</label>
-                            <div class="flex items-center space-x-4">
-                                <div v-if="companyForm.logo"
-                                    class="h-16 w-16 border rounded bg-white p-1 flex items-center justify-center">
-                                    <img :src="companyForm.logo" class="max-h-full max-w-full object-contain">
+                        <button @click="closeConfigModal"
+                            class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+                        <div class="mb-6 bg-cyan-50/50 p-4 rounded-2xl border border-cyan-100/50">
+                            <h3
+                                class="font-bold text-xs text-cyan-900 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                <i class="fa-solid fa-wand-magic-sparkles text-cyan-500"></i> Deducciones Automáticas
+                            </h3>
+                            <p class="text-[10px] text-slate-500 italic mb-4">Estas deducciones se aplicarán al
+                                presionar la varita mágica.</p>
+
+                            <div class="space-y-3">
+                                <div v-for="(ded, index) in appConfig.deductions" :key="ded.id"
+                                    class="bg-white p-3 rounded-xl border border-cyan-100 shadow-sm relative group hover:shadow-md transition-all">
+                                    <button @click="removeDeductionConfig(ded.id)"
+                                        class="absolute -top-2 -right-2 bg-red-50 text-red-500 border border-red-100 rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white shadow-sm z-10"
+                                        title="Eliminar">
+                                        <i class="fa-solid fa-times text-[10px]"></i>
+                                    </button>
+
+                                    <div class="grid grid-cols-12 gap-3">
+                                        <div class="col-span-12 sm:col-span-6">
+                                            <label
+                                                class="block text-[9px] font-bold text-slate-300 uppercase mb-1 px-1">Concepto</label>
+                                            <input type="text" v-model="ded.label"
+                                                class="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400 outline-none uppercase font-bold text-slate-700 transition-all bg-slate-50 focus:bg-white">
+                                        </div>
+                                        <div class="col-span-6 sm:col-span-3">
+                                            <label
+                                                class="block text-[9px] font-bold text-slate-300 uppercase mb-1 px-1">%
+                                                Tasa</label>
+                                            <div class="relative">
+                                                <input type="number" v-model.number="ded.rate" step="0.1"
+                                                    class="w-full border border-slate-200 rounded-lg pl-3 pr-6 py-1.5 text-xs focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400 outline-none text-right font-mono font-bold text-slate-700 bg-slate-50 focus:bg-white transition-all">
+                                                <span
+                                                    class="absolute right-2 top-1.5 text-[10px] text-slate-400 font-bold">%</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-span-6 sm:col-span-3">
+                                            <label
+                                                class="block text-[9px] font-bold text-slate-300 uppercase mb-1 px-1">Base
+                                                Cálculo</label>
+                                            <select v-model="ded.base"
+                                                class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400 outline-none text-slate-600 bg-slate-50 focus:bg-white cursor-pointer transition-all">
+                                                <option value="TOTAL_BRUTO">BRUTO</option>
+                                                <option value="SUELDO_BASICO">BÁSICO</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div v-else
-                                    class="h-16 w-16 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 text-[10px] text-center px-1">
-                                    Sin Logo
-                                </div>
-                                <div class="flex-1">
-                                    <input type="file" @change="handleLogoUpload" accept="image/*"
-                                        class="text-xs w-full">
-                                    <button v-if="companyForm.logo" @click="companyForm.logo = null"
-                                        class="text-[10px] text-red-500 font-bold mt-1 underline">Quitar Logo</button>
-                                </div>
                             </div>
+
+                            <button @click="addDeductionConfig"
+                                class="w-full mt-4 py-3 border-2 border-dashed border-cyan-200 rounded-xl text-cyan-400 text-xs font-bold hover:border-cyan-400 hover:text-cyan-600 hover:bg-cyan-50 transition-all flex items-center justify-center uppercase tracking-wide">
+                                <i class="fa-solid fa-plus-circle mr-2"></i> Agregar Nueva Deducción
+                            </button>
                         </div>
                     </div>
-                    <div class="mt-4 flex justify-end space-x-2">
-                        <button v-if="isEditingCompany" @click="cancelEditCompany"
-                            class="text-xs text-gray-500 hover:text-gray-700 underline mr-2">Cancelar</button>
-                        <button @click="saveCompanyForm"
-                            class="bg-indigo-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-indigo-700">
-                            {{ isEditingCompany ? 'Guardar Cambios' : 'Crear Empresa' }}
+
+                    <div class="p-6 pt-2 bg-white flex justify-end border-t border-slate-50">
+                        <button @click="saveConfig"
+                            class="bg-slate-800 text-white px-8 py-3 rounded-xl text-xs font-bold hover:bg-slate-900 transition-all shadow-lg shadow-slate-200 hover:scale-105 active:scale-95 uppercase tracking-wider flex items-center">
+                            <i class="fa-solid fa-check-circle mr-2"></i> Guardar Cambios
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
+        </transition>
 
-        <!-- MODAL HISTORIAL DE RECIBOS -->
-        <div v-if="showHistoryModal"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print">
-            <div class="bg-white rounded-lg shadow-xl w-[700px] p-6 max-h-[90vh] overflow-y-auto">
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 class="text-lg font-bold text-slate-800"><i
-                            class="fa-solid fa-clock-rotate-left mr-2"></i>Historial
-                        de Recibos</h2>
-                    <button @click="closeHistoryModal" class="text-gray-500 hover:text-gray-700"><i
-                            class="fa-solid fa-times"></i></button>
-                </div>
+        <!-- MODAL NUEVO EMPLEADO (NIVEL DIOS) -->
+        <transition name="toast">
+            <div v-if="showNewEmployeeModal"
+                class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+                <!-- Backdrop -->
+                <div @click="closeNewEmployeeModal" class="absolute inset-0 bg-slate-900/60 backdrop-blur-md"></div>
 
-                <div v-if="filteredHistory.length === 0" class="text-center py-8 text-gray-400">
-                    <i class="fa-solid fa-folder-open text-3xl mb-2"></i>
-                    <p class="text-sm">No hay recibos guardados para <span class="font-bold text-slate-600">{{
-                            company.razonSocial }}</span>.</p>
-                </div>
+                <!-- Modal Card -->
+                <div
+                    class="bg-white rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] w-full max-w-xl overflow-hidden relative animate-in zoom-in duration-300">
+                    <div class="bg-slate-50 px-8 py-6 border-b border-slate-100 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">
+                                {{ isEditingEmployee ? 'Editar Empleado' : 'Nuevo Empleado' }}
+                            </h2>
+                            <p class="text-slate-500 text-xs font-medium">
+                                {{ isEditingEmployee ? 'Modificá los datos del empleado existente' : 'Ingresá los datos para el alta en el sistema' }}
+                            </p>
+                        </div>
+                        <button @click="closeNewEmployeeModal"
+                            class="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-400 transition-colors">
+                            <i class="fa-solid fa-times text-lg"></i>
+                        </button>
+                    </div>
 
-                <div v-else class="overflow-x-auto">
-                    <table class="w-full text-xs text-left">
-                        <thead class="bg-gray-50 text-gray-600 font-bold uppercase border-b">
-                            <tr>
-                                <th class="p-2">Fecha Guardado</th>
-                                <th class="p-2">Periodo</th>
-                                <th class="p-2">Empleado</th>
-                                <th class="p-2 text-right">Neto</th>
-                                <th class="p-2 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <tr v-for="rec in filteredHistory" :key="rec.id" class="hover:bg-blue-50 transition">
-                                <td class="p-2 text-gray-500">{{ new Date(rec.timestamp).toLocaleDateString() }} {{ new
-                                    Date(rec.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }}
-                                </td>
-                                <td class="p-2 font-bold">{{ rec.receiptData.periodo }}</td>
-                                <td class="p-2 font-semibold text-slate-700">{{ rec.employee.nombre }}</td>
-                                <td class="p-2 text-right font-mono">{{ formatCurrency(rec.totals.neto) }}</td>
-                                <td class="p-2 text-center space-x-2">
-                                    <button @click="loadFromHistory(rec)"
-                                        class="text-blue-600 hover:text-blue-800 font-bold" title="Cargar este recibo">
-                                        <i class="fa-solid fa-upload"></i>
-                                    </button>
-                                    <button @click="deleteFromHistory(rec.id)" class="text-red-400 hover:text-red-600"
-                                        title="Eliminar del historial">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+                    <div class="p-8 space-y-5">
+                        <!-- Nombre -->
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Nombre
+                                Completo</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-user absolute left-4 top-3.5 text-slate-300"></i>
+                                <input type="text" v-model="newEmployeeForm.nombre"
+                                    class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700 uppercase"
+                                    placeholder="EJ: PEREZ JUAN">
+                            </div>
+                        </div>
 
-        <!-- MODAL CONFIGURACION DEL SISTEMA -->
-        <div v-if="showConfigModal"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print">
-            <div class="bg-white rounded-lg shadow-xl w-[450px] p-6">
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-sliders mr-2"></i>Configuración
-                    </h2>
-                    <button @click="closeConfigModal" class="text-gray-500 hover:text-gray-700"><i
-                            class="fa-solid fa-times"></i></button>
-                </div>
-                <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                    <p class="text-[11px] text-gray-500 italic">Configura las deducciones automáticas (varita mágica).
-                    </p>
-
-                    <div class="space-y-3">
-                        <div v-for="(ded, index) in appConfig.deductions" :key="ded.id"
-                            class="bg-gray-50 p-3 rounded-lg border border-gray-100 relative group transition-all hover:shadow-sm">
-                            <button @click="removeDeductionConfig(ded.id)"
-                                class="absolute -top-2 -right-2 bg-red-100 text-red-600 rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600 hover:text-white"
-                                title="Eliminar">
-                                <i class="fa-solid fa-times text-[10px]"></i>
-                            </button>
-
-                            <div class="grid grid-cols-12 gap-2">
-                                <div class="col-span-12 sm:col-span-6">
-                                    <label
-                                        class="block text-[9px] font-bold text-gray-400 uppercase mb-1">Nombre</label>
-                                    <input type="text" v-model="ded.label"
-                                        class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-400 outline-none uppercase font-semibold">
+                        <div class="grid grid-cols-2 gap-5">
+                            <!-- CUIL -->
+                            <div class="space-y-1.5">
+                                <label
+                                    class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">CUIL</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-id-card absolute left-4 top-3.5 text-slate-300"></i>
+                                    <input type="text" v-model="newEmployeeForm.cuil"
+                                        class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all font-mono text-sm font-bold text-slate-700"
+                                        placeholder="00-00000000-0">
                                 </div>
-                                <div class="col-span-6 sm:col-span-3">
-                                    <label class="block text-[9px] font-bold text-gray-400 uppercase mb-1">%
-                                        Tasa</label>
-                                    <div class="relative">
-                                        <input type="number" v-model.number="ded.rate" step="0.1"
-                                            class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-400 outline-none text-right font-mono font-bold pr-5">
-                                        <span class="absolute right-1.5 top-1.5 text-[10px] text-gray-400">%</span>
-                                    </div>
+                            </div>
+                            <!-- LEGAJO -->
+                            <div class="space-y-1.5">
+                                <label
+                                    class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Legajo</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-hashtag absolute left-4 top-3.5 text-slate-300"></i>
+                                    <input type="text" v-model="newEmployeeForm.legajo"
+                                        class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all font-mono text-sm font-bold text-slate-700"
+                                        placeholder="0000">
                                 </div>
-                                <div class="col-span-6 sm:col-span-3">
-                                    <label class="block text-[9px] font-bold text-gray-400 uppercase mb-1">Base</label>
-                                    <select v-model="ded.base"
-                                        class="w-full border border-gray-200 rounded px-1 py-1 text-[10px] font-bold bg-white focus:ring-1 focus:ring-blue-400 outline-none">
-                                        <option value="TOTAL_BRUTO">BRUTO</option>
-                                        <option value="SUELDO_BASICO">BÁSICO</option>
-                                    </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-5">
+                            <!-- FECHA INGRESO & ANTIGUEAD -->
+                            <!-- FECHA INGRESO -->
+                            <div class="space-y-1.5 col-span-2">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Fecha
+                                    Ingreso</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-calendar absolute left-4 top-3.5 text-slate-300"></i>
+                                    <input type="text" v-model="newEmployeeForm.ingreso"
+                                        class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700"
+                                        placeholder="DD/MM/YYYY">
+                                </div>
+                            </div>
+                            <!-- CATEGORIA -->
+                            <div class="space-y-1.5 col-span-2">
+                                <label
+                                    class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Categoría</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-briefcase absolute left-4 top-3.5 text-slate-300"></i>
+                                    <input type="text" v-model="newEmployeeForm.categoria"
+                                        class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700 uppercase"
+                                        placeholder="CONDUCTOR">
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <button @click="addDeductionConfig"
-                        class="w-full py-2 border-2 border-dashed border-gray-200 rounded-lg text-gray-400 text-xs font-bold hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all flex items-center justify-center">
-                        <i class="fa-solid fa-plus-circle mr-2"></i> AGREGAR OTRA
-                    </button>
+                    <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                        <div>
+                            <button v-if="isEditingEmployee" @click="deleteEmployee"
+                                class="px-4 py-2 rounded-xl font-bold text-xs text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors uppercase tracking-wider flex items-center">
+                                <i class="fa-solid fa-trash mr-2"></i> Eliminar
+                            </button>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button @click="closeNewEmployeeModal"
+                                class="px-6 py-3 text-slate-500 font-bold text-sm hover:text-slate-700 transition-colors">
+                                CANCELAR
+                            </button>
+                            <button @click="saveEmployeeForm"
+                                class="px-8 py-3 bg-cyan-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-cyan-200 hover:bg-cyan-700 hover:scale-105 active:scale-95 transition-all uppercase tracking-wider">
+                                {{ isEditingEmployee ? 'Guardar Cambios' : 'Crear Empleado' }}
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="mt-6 flex justify-end pt-4 border-t border-gray-100">
-                    <button @click="saveConfig"
-                        class="bg-gray-800 text-white px-6 py-2 rounded text-xs font-bold hover:bg-black transition-all shadow-lg">
-                        GUARDAR CONFIGURACIÓN
-                    </button>
                 </div>
-            </div>
-        </div>
+        </transition>
 
         <!-- TOAST SYSTEM -->
         <div class="fixed top-4 right-4 z-[100] space-y-2 no-print">
@@ -949,7 +1249,7 @@
     <!-- End of App Wrapper -->
 
     <script>
-        const { createApp, ref, computed, onMounted, watch } = Vue;
+        const { createApp, ref, computed, onMounted, onBeforeUnmount, watch } = Vue;
 
         createApp({
             setup() {
@@ -1073,9 +1373,109 @@
                 });
 
                 // ==========================================
-                // GESTION EMPLEADOS (Centralizada)
+                // GESTION EMPLEADOS (NIVEL DIOS)
                 // ==========================================
-                const employeesList = ref([]); // Lista plana de todos los empleados
+                const employeesList = ref([]);
+                const showNewEmployeeModal = ref(false);
+                const isEditingEmployee = ref(false);
+                const newEmployeeForm = ref({ id: null, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: '', categoria: '' });
+
+                // AUTOMATIC SENIORITY CALCULATION (User Request)
+                const calculateSeniority = (dateString) => {
+                    // Expect DD/MM/YYYY
+                    if (!dateString || !/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) return;
+
+                    const [day, month, year] = dateString.split('/').map(Number);
+                    const admissionDate = new Date(year, month - 1, day);
+                    const today = new Date();
+
+                    let years = today.getFullYear() - admissionDate.getFullYear();
+                    const m = today.getMonth() - admissionDate.getMonth();
+
+                    if (m < 0 || (m === 0 && today.getDate() < admissionDate.getDate())) {
+                        years--;
+                    }
+
+                    // Update the form automatically
+                    newEmployeeForm.value.antiguedad = Math.max(0, years);
+                };
+
+                // Watch for changes in Admission Date
+                watch(() => newEmployeeForm.value.ingreso, (newVal) => {
+                    calculateSeniority(newVal);
+                });
+
+                const openNewEmployeeModal = () => {
+                    isEditingEmployee.value = false;
+                    newEmployeeForm.value = { id: null, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: '', categoria: '' };
+                    showNewEmployeeModal.value = true;
+                };
+
+                const openEditEmployeeModal = () => {
+                    if (!employee.value.id) return addToast('No hay empleado cargado para editar', 'error');
+                    isEditingEmployee.value = true;
+                    newEmployeeForm.value = { ...employee.value }; // Load current data
+                    showNewEmployeeModal.value = true;
+                };
+
+                const closeNewEmployeeModal = () => showNewEmployeeModal.value = false;
+
+                const saveEmployeeForm = () => {
+                    const f = newEmployeeForm.value;
+                    if (!f.nombre) return addToast('El nombre es obligatorio', 'error');
+                    if (!f.cuil) return addToast('El CUIL es obligatorio', 'error');
+
+                    if (isEditingEmployee.value) {
+                        // EDIT MODE
+                        const idx = employeesList.value.findIndex(e => e.id === f.id);
+                        if (idx !== -1) {
+                            employeesList.value[idx] = { ...f };
+                            // If editing currently selected employee, update view
+                            if (employee.value.id === f.id) {
+                                employee.value = { ...f };
+                            }
+                            addToast('Empleado actualizado correctamente', 'success');
+                        }
+                    } else {
+                        // CREATE MODE
+                        const newEmp = {
+                            ...f,
+                            id: 'emp_' + Date.now(),
+                            companyId: selectedCompanyId.value,
+                            antiguedad: f.antiguedad || 0
+                        };
+                        employeesList.value.push(newEmp);
+                        // Auto-select new employee
+                        employee.value = { ...newEmp };
+                        addToast('Empleado creado con éxito', 'success');
+                    }
+
+                    saveGlobalData();
+                    showNewEmployeeModal.value = false;
+                };
+
+                const deleteEmployee = () => {
+                    const f = newEmployeeForm.value;
+                    if (!confirm(`¿Estás seguro de que querés eliminar a ${f.nombre}? Esta acción no se puede deshacer.`)) return;
+
+                    employeesList.value = employeesList.value.filter(e => e.id !== f.id);
+
+                    // Anti-Ghost: Reset if deleted employee was active
+                    if (employee.value.id === f.id) {
+                        // Find other employees in this company
+                        const remaining = employeesList.value.filter(e => e.companyId === selectedCompanyId.value);
+                        if (remaining.length > 0) {
+                            employee.value = { ...remaining[0] };
+                        } else {
+                            // No employees left
+                            employee.value = { id: null, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: '', categoria: '' };
+                        }
+                    }
+
+                    saveGlobalData();
+                    showNewEmployeeModal.value = false;
+                    addToast('Empleado eliminado correctamente', 'success');
+                };
 
                 const filteredEmployees = computed(() => {
                     return employeesList.value.filter(e => e.companyId === selectedCompanyId.value);
@@ -1094,14 +1494,8 @@
 
                 const loadEmployee = (empData) => {
                     employee.value = { ...empData };
-                    // Si viene de DB vieja sin ID, lo tratamos como tal, pero ahora todos deberian tener ID en la migracion.
                 };
 
-                const openNewEmployeeModal = () => {
-                    // Simplemente limpiamos el form para permitir ingreso manual
-                    employee.value = { companyId: selectedCompanyId.value, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: '', categoria: '' };
-                    // En este diseño simplificado, el usuario llena los inputs y le da a "Actualizar Datos"
-                };
 
                 const updateCurrentEmployee = () => {
                     if (!employee.value.nombre) return alert('Ingrese nombre');
@@ -1496,7 +1890,7 @@
                 };
 
                 onMounted(() => {
-                    window.addEventListener('click', handleClickOutside);
+                    window.addEventListener('mousedown', handleClickOutside);
                     const saved = localStorage.getItem('sistemaRecibos_v2_data');
                     if (saved) {
                         try {
@@ -1564,6 +1958,10 @@
                     }
                 });
 
+                onBeforeUnmount(() => {
+                    window.removeEventListener('mousedown', handleClickOutside);
+                });
+
                 watch([companiesList, employeesList, selectedCompanyId, appConfig], saveGlobalData, { deep: true });
 
                 return {
@@ -1571,7 +1969,8 @@
                     showCompanyModal, isEditingCompany, companyForm, openCompanyModal, closeCompanyModal, saveCompanyForm, editCompany, cancelEditCompany, deleteCompany,
                     showConfigModal, appConfig, openConfigModal, closeConfigModal, saveConfig, toasts, addDeductionConfig, removeDeductionConfig,
                     handleLogoUpload, exportBackup, importBackup, getDynamicFontSize,
-                    employeesList, filteredEmployees, loadEmployee, openNewEmployeeModal, updateCurrentEmployee, employee,
+                    employeesList, filteredEmployees, loadEmployee, updateCurrentEmployee, employee,
+                    showNewEmployeeModal, newEmployeeForm, openNewEmployeeModal, closeNewEmployeeModal, saveEmployeeForm, isEditingEmployee, openEditEmployeeModal, deleteEmployee,
                     employeeSearch, showEmployeeList, employeeSearchResults, selectEmployeeSearch, searchContainer,
                     receipt, concepts, isSACMode, sacBestSalary, processedConcepts, totalRemunerativo, totalNoRemunerativo, totalHaberes, totalDeducciones, netoPercibir,
                     calculateSAC, autoCalculateDeductions, addConceptSemiblank, removeConcept, printReceipt, formatCurrency, formatCurrencyPlain, formatNumber, numeroALetras,
