@@ -51,9 +51,9 @@
             width: 297mm;
             height: 210mm;
             background: white;
-            margin: auto;
+            margin: 0 auto;
+            /* Fix: Only center horizontally */
             display: flex;
-            transform: scale(0.85);
             transform-origin: top center;
             box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
         }
@@ -255,9 +255,9 @@
                     <!-- SELECTOR DE EMPRESA MULTI-COMPANY (Mantine Select) -->
                     <div class="flex gap-2">
                         <div class="relative group flex-1">
-                            <i class="fa-solid fa-building absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                            <i class="fa-solid fa-building absolute left-3 top-3 text-gray-400 text-xs"></i>
                             <select v-model="selectedCompanyId"
-                                class="w-full bg-gray-50 hover:bg-white border border-gray-200 rounded-lg pl-9 pr-8 py-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-100 focus:border-cyan-400 transition-all appearance-none cursor-pointer">
+                                class="w-full bg-gray-50 hover:bg-white border border-gray-200 rounded-xl pl-9 pr-8 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-100 focus:border-cyan-400 transition-all appearance-none cursor-pointer">
                                 <option v-for="comp in companiesList" :key="comp.id" :value="comp.id"
                                     class="text-slate-800 py-1">
                                     {{ comp.razonSocial }}
@@ -268,16 +268,16 @@
                         </div>
 
                         <!-- Actions (Toolbar Row) -->
-                        <div class="flex gap-1 shrink-0">
+                        <div class="flex gap-2 shrink-0">
                             <button @click="openCompanyModal"
-                                class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200 transition bg-white shadow-sm"
+                                class="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200 transition bg-white shadow-sm"
                                 title="Gestionar Empresas">
-                                <i class="fa-solid fa-cog text-xs"></i>
+                                <i class="fa-solid fa-cog text-sm"></i>
                             </button>
                             <button @click="openConfigModal"
-                                class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200 transition bg-white shadow-sm"
+                                class="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200 transition bg-white shadow-sm"
                                 title="Configuración">
-                                <i class="fa-solid fa-sliders text-xs"></i>
+                                <i class="fa-solid fa-sliders text-sm"></i>
                             </button>
                         </div>
                     </div>
@@ -317,79 +317,114 @@
 
                     <!-- SECCION 2: EMPLEADO -->
                     <div class="space-y-4">
+                        <!-- 1. Buscador (Search Bar) -->
+                        <div class="relative group" ref="searchContainer">
+                            <input type="text" v-model="employeeSearch" @focus="showEmployeeList = true"
+                                @keyup.esc="showEmployeeList = false" placeholder="BUSCAR EMPLEADO..."
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-cyan-100 focus:border-cyan-400 outline-none uppercase bg-white shadow-sm transition-all group-hover:border-cyan-300">
+                            <i
+                                class="fa-solid fa-search absolute right-3 top-3 text-gray-300 text-xs pointer-events-none group-hover:text-cyan-500 transition-colors"></i>
+
+                            <div v-if="showEmployeeList"
+                                class="absolute w-full bg-white border border-gray-100 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto mt-2 p-1 custom-scrollbar">
+                                <div v-for="emp in employeeSearchResults" :key="emp.id"
+                                    @click="selectEmployeeSearch(emp)"
+                                    class="px-3 py-2.5 text-[11px] hover:bg-cyan-50 cursor-pointer rounded-lg text-slate-700 flex justify-between items-center transition mb-0.5 last:mb-0 group">
+                                    <span class="font-bold truncate group-hover:text-cyan-700">{{ emp.nombre
+                                        }}</span>
+                                    <span
+                                        class="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-mono border border-gray-200 group-hover:border-cyan-200 group-hover:bg-white group-hover:text-cyan-600">{{
+                                        emp.legajo }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Header (Title + Buttons) -->
                         <div class="flex justify-between items-end">
                             <h3
-                                class="font-bold text-[10px] text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                                Empleado
+                                class="font-bold text-xs text-slate-400 uppercase tracking-widest flex items-center gap-2 truncate max-w-[60%]">
+                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0"></span>
+                                {{ employee.nombre ? employee.nombre : 'EMPLEADO NO SELECCIONADO' }}
                             </h3>
-                            <div>
+                            <div class="shrink-0 flex items-center gap-1">
                                 <button @click="openEditEmployeeModal"
-                                    class="text-slate-400 hover:text-cyan-600 font-bold text-[10px] px-2 py-1 transition-colors mr-1"
+                                    class="w-9 h-9 rounded-lg border border-transparent hover:border-cyan-200 hover:bg-cyan-50 text-slate-400 hover:text-cyan-600 flex items-center justify-center transition-all bg-white shadow-sm"
                                     title="Editar datos">
-                                    <i class="fa-solid fa-pen"></i>
+                                    <i class="fa-solid fa-pen text-xs"></i>
+                                </button>
+                                <button @click="deleteSelectedEmployee"
+                                    class="w-9 h-9 rounded-lg border border-transparent hover:border-red-200 hover:bg-red-50 text-slate-400 hover:text-red-600 flex items-center justify-center transition-all bg-white shadow-sm"
+                                    title="Eliminar empleado">
+                                    <i class="fa-solid fa-trash text-xs"></i>
                                 </button>
                                 <button @click="openNewEmployeeModal"
-                                    class="text-cyan-600 font-bold text-[10px] bg-cyan-50 px-2 py-1 rounded hover:bg-cyan-100 transition-colors border border-cyan-100">
+                                    class="text-cyan-600 font-bold text-xs bg-cyan-50 px-4 py-2 rounded-lg hover:bg-cyan-100 transition-colors border border-cyan-100 flex items-center h-9 ml-1">
                                     + NUEVO
                                 </button>
                             </div>
                         </div>
 
-                        <div class="bg-white p-1 space-y-3">
-                            <!-- Buscador -->
-                            <div class="relative group" ref="searchContainer">
-                                <input type="text" v-model="employeeSearch" @focus="showEmployeeList = true"
-                                    @keyup.esc="showEmployeeList = false" placeholder="BUSCAR EMPLEADO..."
-                                    class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-cyan-100 focus:border-cyan-400 outline-none uppercase bg-gray-50 focus:bg-white shadow-sm transition-all group-hover:border-cyan-300">
-                                <i
-                                    class="fa-solid fa-search absolute right-3 top-3 text-gray-300 text-xs pointer-events-none group-hover:text-cyan-500 transition-colors"></i>
+                        <!-- 3. Details Card -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative space-y-4">
+                            <!-- Overlay de Seguridad (Read Only Hint) -->
+                            <div v-if="!isEditingEmployee" class="absolute inset-0 z-10 bg-slate-50/5 cursor-default"
+                                title="Para editar, use el botón EDITAR (Lápiz)"></div>
 
-                                <div v-if="showEmployeeList"
-                                    class="absolute w-full bg-white border border-gray-100 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto mt-2 p-1 custom-scrollbar">
-                                    <div v-for="emp in employeeSearchResults" :key="emp.id"
-                                        @click="selectEmployeeSearch(emp)"
-                                        class="px-3 py-2.5 text-[11px] hover:bg-cyan-50 cursor-pointer rounded-lg text-slate-700 flex justify-between items-center transition mb-0.5 last:mb-0 group">
-                                        <span class="font-bold truncate group-hover:text-cyan-700">{{ emp.nombre
-                                            }}</span>
-                                        <span
-                                            class="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-mono border border-gray-200 group-hover:border-cyan-200 group-hover:bg-white group-hover:text-cyan-600">{{
-                                            emp.legajo }}</span>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-wider">Nombre
+                                    Completo</label>
+                                <div class="relative group">
+                                    <div
+                                        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                        <i class="fa-solid fa-user"></i>
                                     </div>
+                                    <input type="text" v-model="employee.nombre" readonly
+                                        class="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 focus:outline-none cursor-default shadow-sm tracking-wide"
+                                        placeholder="NOMBRE COMPLETO (Autoselección)">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-5">
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-wider">CUIL</label>
+                                    <input type="text" v-model="employee.cuil" readonly
+                                        class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono font-medium text-slate-600 bg-slate-50 focus:outline-none cursor-default shadow-sm"
+                                        placeholder="CUIL">
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-wider">Legajo</label>
+                                    <input type="text" v-model="employee.legajo" readonly
+                                        class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono font-medium text-slate-600 bg-slate-50 focus:outline-none cursor-default shadow-sm"
+                                        placeholder="LEGAJO">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-5">
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-wider">Fecha
+                                        de Ingreso</label>
+                                    <input type="text" v-model="employee.ingreso" readonly
+                                        class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-600 focus:outline-none cursor-default shadow-sm"
+                                        placeholder="F. INGRESO">
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-wider">Antigüedad
+                                        (Años)</label>
+                                    <input type="text" v-model="employee.antiguedad" readonly
+                                        class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-600 focus:outline-none cursor-default shadow-sm"
+                                        placeholder="ANTIGÜEDAD">
                                 </div>
                             </div>
 
-                            <div class="space-y-2 pt-2 relative">
-                                <!-- Overlay de Seguridad (Read Only Hint) -->
-                                <div v-if="!isEditingEmployee"
-                                    class="absolute inset-0 z-10 bg-slate-50/10 cursor-not-allowed"
-                                    title="Para editar, use el botón EDITAR"></div>
-
-                                <input type="text" v-model="employee.nombre" readonly
-                                    class="w-full px-3 py-2 border border-gray-200 rounded-lg font-bold text-xs uppercase bg-gray-50 text-slate-500 focus:outline-none cursor-default"
-                                    placeholder="NOMBRE COMPLETO">
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="text" v-model="employee.cuil" readonly
-                                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 text-slate-500 focus:outline-none cursor-default"
-                                        placeholder="CUIL">
-                                    <input type="text" v-model="employee.legajo" readonly
-                                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 text-slate-500 focus:outline-none cursor-default"
-                                        placeholder="LEGAJO">
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="text" v-model="employee.ingreso" readonly
-                                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 text-slate-500 focus:outline-none cursor-default"
-                                        placeholder="F. INGRESO">
-                                    <input type="text" v-model="employee.antiguedad" readonly
-                                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 text-slate-500 focus:outline-none cursor-default"
-                                        placeholder="ANTIGÜEDAD">
-                                </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-wider">Categoría</label>
                                 <input type="text" v-model="employee.categoria" readonly
-                                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[11px] uppercase font-semibold text-slate-500 bg-gray-50 focus:outline-none cursor-default"
+                                    class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm uppercase font-bold text-slate-600 bg-slate-50 focus:outline-none cursor-default shadow-sm"
                                     placeholder="CATEGORÍA">
-
-                                <!-- Removed Guardar Update Local button since now it is read only -->
-                                <!-- <button @click="updateCurrentEmployee" ... > -->
                             </div>
                         </div>
                     </div>
@@ -441,32 +476,32 @@
                             <div v-for="(item, index) in concepts" :key="index"
                                 class="flex items-center space-x-2 p-1 group hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition-all">
 
-                                <div class="w-12">
+                                <div class="w-16">
                                     <input type="number" v-model="item.cantidad"
-                                        class="w-full text-[10px] border border-gray-200 rounded px-1 py-1.5 font-mono text-center bg-gray-50 focus:bg-white focus:ring-1 focus:ring-blue-400 outline-none transition-all placeholder-gray-300"
+                                        class="w-full text-xs border border-gray-200 rounded-lg px-2 py-2 font-mono text-center bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all placeholder-gray-300"
                                         placeholder="0">
                                 </div>
 
                                 <div class="flex-1">
                                     <input type="text" v-model="item.descripcion"
-                                        class="w-full text-[10px] border border-gray-200 rounded px-2 py-1.5 font-bold uppercase focus:ring-1 focus:ring-blue-400 outline-none transition-all placeholder-gray-300 focus:bg-white bg-transparent"
+                                        class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 font-bold uppercase focus:ring-2 focus:ring-blue-400 outline-none transition-all placeholder-gray-300 focus:bg-white bg-transparent"
                                         placeholder="DESCRIPCIÓN">
                                 </div>
 
-                                <div class="w-24">
+                                <div class="w-28">
                                     <select v-model="item.tipo"
-                                        class="w-full text-[9px] border border-gray-200 rounded px-1 py-1.5 bg-gray-50 font-bold outline-none cursor-pointer text-slate-600 focus:ring-1 focus:ring-blue-400">
+                                        class="w-full text-[10px] border border-gray-200 rounded-lg px-2 py-2 bg-gray-50 font-bold outline-none cursor-pointer text-slate-600 focus:ring-2 focus:ring-blue-400">
                                         <option value="REM">REMUNERAT.</option>
                                         <option value="NO_REM">NO REMUN.</option>
                                         <option value="DED">DEDUCCIÓN</option>
                                     </select>
                                 </div>
 
-                                <div class="w-24">
+                                <div class="w-28">
                                     <div class="relative">
-                                        <span class="absolute left-2 top-1.5 text-[9px] text-gray-400">$</span>
+                                        <span class="absolute left-2 top-2 text-[10px] text-gray-400">$</span>
                                         <input type="number" v-model.number="item.valorUnitario"
-                                            class="w-full text-[10px] border border-gray-200 rounded pl-4 pr-2 py-1.5 text-right font-mono font-bold bg-white focus:ring-1 focus:ring-blue-400 outline-none transition-all placeholder-gray-300 shadow-sm"
+                                            class="w-full text-xs border border-gray-200 rounded-lg pl-4 pr-3 py-2 text-right font-mono font-bold bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all placeholder-gray-300 shadow-sm"
                                             placeholder="0.00">
                                     </div>
                                 </div>
@@ -477,42 +512,57 @@
                                 </button>
                             </div>
 
-                            <div class="grid grid-cols-3 gap-2 pt-2">
+                            <div class="grid grid-cols-3 gap-3 pt-3">
                                 <button @click="addConceptSemiblank('REM')"
-                                    class="bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 px-2 py-2.5 rounded-xl text-[9px] font-black border border-gray-200 hover:border-cyan-200 transition-all uppercase shadow-sm flex flex-col items-center gap-1 group">
-                                    <i
-                                        class="fa-solid fa-plus text-cyan-400 group-hover:scale-110 transition-transform"></i>
-                                    Hab. Rem
+                                    class="bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 px-2 py-3 rounded-xl text-[10px] font-black border border-gray-200 hover:border-cyan-300 transition-all uppercase shadow-sm flex flex-row items-center justify-center gap-2 group hover:-translate-y-0.5">
+                                    <div
+                                        class="w-6 h-6 shrink-0 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 group-hover:scale-110 transition-transform">
+                                        <i class="fa-solid fa-plus text-xs"></i>
+                                    </div>
+                                    <span>Haberes</span>
                                 </button>
                                 <button @click="addConceptSemiblank('NO_REM')"
-                                    class="bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 px-2 py-2.5 rounded-xl text-[9px] font-black border border-gray-200 hover:border-cyan-200 transition-all uppercase shadow-sm flex flex-col items-center gap-1 group">
-                                    <i
-                                        class="fa-solid fa-asterisk text-cyan-400 group-hover:scale-110 transition-transform"></i>
-                                    No Rem
+                                    class="bg-white hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 px-2 py-3 rounded-xl text-[10px] font-black border border-gray-200 hover:border-indigo-300 transition-all uppercase shadow-sm flex flex-row items-center justify-center gap-2 group hover:-translate-y-0.5">
+                                    <div
+                                        class="w-6 h-6 shrink-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                                        <i class="fa-solid fa-asterisk text-xs"></i>
+                                    </div>
+                                    <span>No Remun.</span>
                                 </button>
                                 <button @click="addConceptSemiblank('DED')"
-                                    class="bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 px-2 py-2.5 rounded-xl text-[9px] font-black border border-gray-200 hover:border-rose-200 transition-all uppercase shadow-sm flex flex-col items-center gap-1 group">
-                                    <i
-                                        class="fa-solid fa-minus text-rose-400 group-hover:scale-110 transition-transform"></i>
-                                    Deducción
+                                    class="bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 px-2 py-3 rounded-xl text-[10px] font-black border border-gray-200 hover:border-rose-300 transition-all uppercase shadow-sm flex flex-row items-center justify-center gap-2 group hover:-translate-y-0.5">
+                                    <div
+                                        class="w-6 h-6 shrink-0 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 group-hover:scale-110 transition-transform">
+                                        <i class="fa-solid fa-minus text-xs"></i>
+                                    </div>
+                                    <span>Deducción</span>
                                 </button>
                             </div>
 
-                            <button @click="autoCalculateDeductions"
-                                class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white px-3 py-3 rounded-xl text-[10px] font-black hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center uppercase tracking-wider mt-4 shadow-md group">
-                                <i class="fa-solid fa-wand-magic-sparkles mr-2 group-hover:animate-pulse"></i> Calcular
-                                Deducciones
-                            </button>
+                            <!-- BOTONES DE ACCIÓN UNIFICADOS (Dark Aesthetic) -->
+                            <div class="space-y-3 mt-4">
+                                <!-- Calcular: Dark & Premium -->
+                                <button @click="autoCalculateDeductions"
+                                    class="w-full bg-slate-900 hover:bg-black text-white py-3.5 rounded-xl text-xs font-black hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center uppercase tracking-wider border border-slate-800 hover:border-cyan-500/50 shadow-md group">
+                                    <i
+                                        class="fa-solid fa-wand-magic-sparkles mr-2 text-sm text-cyan-400 group-hover:animate-pulse"></i>
+                                    Calcular Deducciones
+                                </button>
 
-                            <div class="grid grid-cols-1 gap-2 mt-2">
-                                <button @click="saveReceipt"
-                                    class="bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl text-[10px] font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center uppercase border border-slate-700">
-                                    <i class="fa-solid fa-floppy-disk mr-2 text-cyan-400"></i> Guardar Recibo
-                                </button>
-                                <button @click="openHistoryModal"
-                                    class="bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 border border-slate-200 hover:border-cyan-200 py-3 rounded-xl text-[10px] font-bold shadow-sm hover:shadow-md transition-all flex items-center justify-center uppercase">
-                                    <i class="fa-solid fa-clock-rotate-left mr-2"></i> Historial
-                                </button>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <!-- Guardar: Dark & Slate -->
+                                    <button @click="saveReceipt"
+                                        class="bg-slate-800 hover:bg-slate-700 text-white py-3.5 rounded-xl text-xs font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center uppercase border border-slate-700 tracking-wider">
+                                        <i class="fa-solid fa-floppy-disk mr-2 text-emerald-400 text-sm"></i> Guardar
+                                        Recibo
+                                    </button>
+                                    <!-- Historial: Light & Clean -->
+                                    <button @click="openHistoryModal"
+                                        class="bg-white hover:bg-gray-50 text-slate-700 hover:text-cyan-700 border border-slate-200 hover:border-cyan-200 py-3.5 rounded-xl text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center justify-center uppercase tracking-wide">
+                                        <i class="fa-solid fa-clock-rotate-left mr-2 text-sm text-slate-400"></i>
+                                        Historial de Recibos
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -548,24 +598,24 @@
 
                             <!-- Main Amount -->
                             <div
-                                class="text-[2.5rem] font-black text-white tracking-tighter font-mono leading-none drop-shadow-lg flex items-baseline gap-1">
-                                <span class="text-xl text-cyan-500/80 font-bold">$</span>
+                                class="text-3xl font-black text-white tracking-tighter font-mono leading-none drop-shadow-lg flex items-baseline gap-1.5 py-2">
+                                <span class="text-lg text-cyan-500/80 font-bold">$</span>
                                 {{ formatCurrencyPlain(netoPercibir) }}
                             </div>
 
                             <!-- Details Grid -->
                             <div class="grid grid-cols-2 gap-3 pt-1">
-                                <div class="bg-white/5 rounded-lg p-2 border border-white/5 backdrop-blur-sm">
+                                <div class="bg-white/5 rounded-lg p-2.5 border border-white/5 backdrop-blur-sm">
                                     <span
-                                        class="block text-[8px] font-bold text-cyan-200/60 uppercase tracking-wide mb-0.5">Haberes</span>
-                                    <span class="block text-xs font-bold text-emerald-400 font-mono tracking-tight">{{
+                                        class="block text-[9px] font-bold text-cyan-200/60 uppercase tracking-wide mb-0.5">Haberes</span>
+                                    <span class="block text-sm font-bold text-emerald-400 font-mono tracking-tight">{{
                                         formatCurrency(totalRemunerativo + totalNoRemunerativo) }}</span>
                                 </div>
                                 <div
-                                    class="bg-white/5 rounded-lg p-2 border border-white/5 backdrop-blur-sm text-right">
+                                    class="bg-white/5 rounded-lg p-2.5 border border-white/5 backdrop-blur-sm text-right">
                                     <span
-                                        class="block text-[8px] font-bold text-rose-200/60 uppercase tracking-wide mb-0.5">Retenciones</span>
-                                    <span class="block text-xs font-bold text-rose-400 font-mono tracking-tight">-{{
+                                        class="block text-[9px] font-bold text-rose-200/60 uppercase tracking-wide mb-0.5">Retenciones</span>
+                                    <span class="block text-sm font-bold text-rose-400 font-mono tracking-tight">-{{
                                         formatCurrency(totalDeducciones) }}</span>
                                 </div>
                             </div>
@@ -600,9 +650,21 @@
             </div>
 
             <!-- AREA DE VISTA PREVIA (MAIN) -->
-            <div class="flex-1 bg-slate-700 overflow-y-auto p-4 flex justify-center items-start">
+            <div class="flex-1 bg-slate-700 overflow-y-auto relative flex flex-col items-center justify-start py-8 custom-scrollbar"
+                ref="previewContainer">
+                <!-- Zoom Controls (Optional bonus) -->
+                <div class="fixed bottom-4 right-4 flex gap-2 z-50 opacity-50 hover:opacity-100 transition-opacity">
+                    <button @click="adjustScale(-0.1)"
+                        class="bg-gray-800 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg hover:bg-black">-</button>
+                    <span class="bg-gray-800 text-white px-2 rounded-lg flex items-center text-xs h-8">{{
+                        Math.round(receiptScale * 100) }}%</span>
+                    <button @click="adjustScale(0.1)"
+                        class="bg-gray-800 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg hover:bg-black">+</button>
+                </div>
 
-                <div class="print-container text-black font-sans leading-tight">
+                <!-- Fix: Force transform-origin in inline style and remove margin auto logic from class via overriding if needed, but margin: 0 auto is good for horizontal centering -->
+                <div class="print-container text-black font-sans leading-tight shadow-2xl transition-transform duration-200"
+                    :style="{ transform: `scale(${receiptScale})`, transformOrigin: 'top center', marginBottom: `-${(1 - receiptScale) * 1123}px` }">
 
                     <!-- TEMPLATE PARA AMBOS LADOS -->
                     <template v-for="type in ['DUPLICADO', 'ORIGINAL']">
@@ -948,7 +1010,7 @@
                     class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"></div>
 
                 <div
-                    class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100 flex flex-col max-h-[85vh]">
+                    class="bg-white rounded-3xl shadow-2xl w-full max-w-7xl overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100 flex flex-col max-h-[85vh]">
                     <div
                         class="bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center shrink-0">
                         <div>
@@ -965,64 +1027,116 @@
                         </button>
                     </div>
 
+                    <div class="px-8 py-3 bg-slate-50 border-b border-slate-100 flex gap-4 shrink-0">
+                        <!-- Filters -->
+                        <div class="space-y-1.5">
+                            <label
+                                class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Mes</label>
+                            <select v-model="historyFilterMonth"
+                                class="block w-44 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 uppercase shadow-sm">
+                                <option value="TODOS">TODOS</option>
+                                <option v-for="m in months" :key="m" :value="m">{{ m }}</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label
+                                class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Año</label>
+                            <select v-model="historyFilterYear"
+                                class="block w-36 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 uppercase shadow-sm">
+                                <option value="TODOS">TODOS</option>
+                                <option v-for="y in availableHistoryYears" :key="y" :value="y">{{ y }}</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="overflow-auto custom-scrollbar flex-1 p-0">
                         <div v-if="filteredHistory.length === 0"
                             class="flex flex-col items-center justify-center py-20 text-slate-300">
-                            <i class="fa-solid fa-folder-open text-5xl mb-4"></i>
-                            <p class="text-sm font-medium">No hay recibos guardados todavía.</p>
+                            <i class="fa-solid fa-folder-open text-5xl mb-4 opacity-50"></i>
+                            <p class="text-sm font-medium">No se encontraron recibos.</p>
                         </div>
 
-                        <table v-else class="w-full text-left border-collapse">
-                            <thead
-                                class="bg-slate-50 sticky top-0 z-10 text-[10px] font-black uppercase text-slate-400 tracking-wider shadow-sm">
-                                <tr>
-                                    <th class="px-6 py-4 font-black">Fecha</th>
-                                    <th class="px-6 py-4 font-black">Periodo</th>
-                                    <th class="px-6 py-4 font-black">Empleado</th>
-                                    <th class="px-6 py-4 font-black text-right">Neto</th>
-                                    <th class="px-6 py-4 font-black text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                <tr v-for="rec in filteredHistory" :key="rec.id"
-                                    class="hover:bg-slate-50/80 transition-colors group">
-                                    <td class="px-6 py-3 text-xs font-mono text-slate-500">
-                                        {{ new Date(rec.timestamp).toLocaleDateString() }}
-                                        <span class="text-[10px] text-slate-300 ml-1">{{ new
-                                            Date(rec.timestamp).toLocaleTimeString([], {hour: '2-digit',
-                                            minute:'2-digit'}) }}</span>
-                                    </td>
-                                    <td class="px-6 py-3">
-                                        <span
-                                            class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md text-[10px] font-bold uppercase">{{
-                                            rec.receiptData.periodo }}</span>
-                                    </td>
-                                    <td class="px-6 py-3">
-                                        <span class="font-bold text-slate-700 text-xs">{{ rec.employee.nombre }}</span>
-                                        <div class="text-[10px] text-slate-400">{{ rec.employee.categoria }}</div>
-                                    </td>
-                                    <td class="px-6 py-3 text-right">
-                                        <span class="font-mono font-bold text-slate-800 tracking-tight">{{
-                                            formatCurrency(rec.totals.neto) }}</span>
-                                    </td>
-                                    <td class="px-6 py-3">
-                                        <div
-                                            class="flex justify-center space-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                                            <button @click="loadFromHistory(rec)"
-                                                class="w-8 h-8 rounded-full bg-white border border-slate-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200 flex items-center justify-center transition shadow-sm"
-                                                title="Cargar">
-                                                <i class="fa-solid fa-upload text-xs"></i>
-                                            </button>
-                                            <button @click="deleteFromHistory(rec.id)"
-                                                class="w-8 h-8 rounded-full bg-white border border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200 flex items-center justify-center transition shadow-sm"
-                                                title="Eliminar">
-                                                <i class="fa-solid fa-trash text-xs"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div v-else>
+                            <table class="w-full text-left border-collapse">
+                                <thead
+                                    class="bg-white sticky top-0 z-10 text-xs font-black uppercase text-slate-400 tracking-wider shadow-sm">
+                                    <tr>
+                                        <th class="px-6 py-5 font-black">Fecha</th>
+                                        <th class="px-6 py-5 font-black">Periodo</th>
+                                        <th class="px-6 py-5 font-black">Empleado</th>
+                                        <th class="px-6 py-5 font-black text-right">Neto</th>
+                                        <th class="px-6 py-5 font-black text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr v-for="rec in paginatedHistory" :key="rec.id"
+                                        class="hover:bg-slate-50/80 transition-colors group">
+                                        <td class="px-6 py-4 text-sm font-mono text-slate-500">
+                                            {{ new Date(rec.timestamp).toLocaleDateString() }}
+                                            <span class="text-xs text-slate-300 ml-1">{{ new
+                                                Date(rec.timestamp).toLocaleTimeString([], {hour: '2-digit',
+                                                minute:'2-digit'}) }}</span>
+                                        </td>
+                                        <td class="px-6 py-3 whitespace-nowrap">
+                                            <span
+                                                class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md text-[10px] font-bold uppercase whitespace-nowrap">{{
+                                                rec.receiptData.periodo }}</span>
+                                        </td>
+                                        <td class="px-6 py-3">
+                                            <span class="font-bold text-slate-700 text-xs">{{ rec.employee.nombre
+                                                }}</span>
+                                            <div class="text-[10px] text-slate-400">{{ rec.employee.categoria }}</div>
+                                        </td>
+                                        <td class="px-6 py-3 text-right">
+                                            <span class="font-mono font-bold text-slate-800 tracking-tight">{{
+                                                formatCurrency(rec.totals.neto) }}</span>
+                                        </td>
+                                        <td class="px-6 py-3">
+                                            <div
+                                                class="flex justify-center space-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                <button @click="loadFromHistory(rec)"
+                                                    class="w-8 h-8 rounded-full bg-white border border-slate-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200 flex items-center justify-center transition shadow-sm"
+                                                    title="Cargar">
+                                                    <i class="fa-solid fa-upload text-xs"></i>
+                                                </button>
+                                                <button @click="printFromHistory(rec)"
+                                                    class="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 flex items-center justify-center transition shadow-sm"
+                                                    title="Imprimir">
+                                                    <i class="fa-solid fa-print text-xs"></i>
+                                                </button>
+                                                <button @click="deleteFromHistory(rec.id)"
+                                                    class="w-8 h-8 rounded-full bg-white border border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200 flex items-center justify-center transition shadow-sm"
+                                                    title="Eliminar">
+                                                    <i class="fa-solid fa-trash text-xs"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div v-if="filteredHistory.length > 0"
+                        class="px-6 py-4 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            Mostrando {{ (historyPage - 1) * historyItemsPerPage + 1 }} - {{ Math.min(historyPage *
+                            historyItemsPerPage, filteredHistory.length) }} de {{ filteredHistory.length }}
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <button @click="prevHistoryPage" :disabled="historyPage === 1"
+                                class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-cyan-600 disabled:opacity-30 disabled:hover:bg-white transition-colors">
+                                <i class="fa-solid fa-chevron-left text-xs"></i>
+                            </button>
+                            <span class="text-xs font-bold text-slate-600 w-16 text-center">
+                                Pág. {{ historyPage }} / {{ totalHistoryPages }}
+                            </span>
+                            <button @click="nextHistoryPage" :disabled="historyPage === totalHistoryPages"
+                                class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-cyan-600 disabled:opacity-30 disabled:hover:bg-white transition-colors">
+                                <i class="fa-solid fa-chevron-right text-xs"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1136,7 +1250,7 @@
                                 {{ isEditingEmployee ? 'Editar Empleado' : 'Nuevo Empleado' }}
                             </h2>
                             <p class="text-slate-500 text-xs font-medium">
-                                {{ isEditingEmployee ? 'Modificá los datos del empleado existente' : 'Ingresá los datos para el alta en el sistema' }}
+                                {{ headerSubtitle }}
                             </p>
                         </div>
                         <button @click="closeNewEmployeeModal"
@@ -1211,12 +1325,7 @@
                     </div>
 
                     <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
-                        <div>
-                            <button v-if="isEditingEmployee" @click="deleteEmployee"
-                                class="px-4 py-2 rounded-xl font-bold text-xs text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors uppercase tracking-wider flex items-center">
-                                <i class="fa-solid fa-trash mr-2"></i> Eliminar
-                            </button>
-                        </div>
+                        <div></div>
                         <div class="flex space-x-3">
                             <button @click="closeNewEmployeeModal"
                                 class="px-6 py-3 text-slate-500 font-bold text-sm hover:text-slate-700 transition-colors">
@@ -1229,7 +1338,7 @@
                         </div>
                     </div>
                 </div>
-                </div>
+            </div>
         </transition>
 
         <!-- TOAST SYSTEM -->
@@ -1425,6 +1534,11 @@
                     if (!f.nombre) return addToast('El nombre es obligatorio', 'error');
                     if (!f.cuil) return addToast('El CUIL es obligatorio', 'error');
 
+                    // NORMALIZE UPPERCASE
+                    f.nombre = f.nombre.toUpperCase();
+                    f.categoria = (f.categoria || '').toUpperCase();
+                    f.legajo = (f.legajo || '').toUpperCase();
+
                     if (isEditingEmployee.value) {
                         // EDIT MODE
                         const idx = employeesList.value.findIndex(e => e.id === f.id);
@@ -1477,8 +1591,34 @@
                     addToast('Empleado eliminado correctamente', 'success');
                 };
 
+                const deleteSelectedEmployee = () => {
+                    const emp = employee.value;
+                    if (!emp.id) return;
+
+                    if (!confirm(`¿Estás seguro de que querés eliminar a ${emp.nombre}? Esta acción no se puede deshacer.`)) return;
+
+                    employeesList.value = employeesList.value.filter(e => e.id !== emp.id);
+
+                    // Anti-Ghost: Pick another employee
+                    const remaining = employeesList.value.filter(e => e.companyId === selectedCompanyId.value);
+                    if (remaining.length > 0) {
+                        employee.value = { ...remaining[0] };
+                    } else {
+                        employee.value = { id: null, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: '', categoria: '' };
+                    }
+
+                    saveGlobalData();
+                    addToast('Empleado eliminado correctamente', 'success');
+                };
+
                 const filteredEmployees = computed(() => {
                     return employeesList.value.filter(e => e.companyId === selectedCompanyId.value);
+                });
+
+                const headerSubtitle = computed(() => {
+                    return isEditingEmployee.value
+                        ? 'Modificá los datos del empleado existente'
+                        : 'Ingresá los datos para el alta en el sistema';
                 });
 
                 const employee = ref({
@@ -1782,11 +1922,54 @@
                 const showHistoryModal = ref(false);
 
                 // Computed: Filter history by selected company
-                const filteredHistory = computed(() => {
-                    return receiptHistory.value
-                        .filter(r => r.companyId === selectedCompanyId.value)
-                        .sort((a, b) => b.timestamp - a.timestamp); // Newest first
+                const historyFilterYear = ref('TODOS');
+                const historyFilterMonth = ref('TODOS');
+                const historyPage = ref(1);
+                const historyItemsPerPage = 10;
+
+                const availableHistoryYears = computed(() => {
+                    const years = new Set(receiptHistory.value.map(r => {
+                        try {
+                            // Periodo format: "MES DE AÑO"
+                            return r.receiptData.periodo.split(' DE ')[1];
+                        } catch (e) { return null; }
+                    }).filter(y => y));
+                    return Array.from(years).sort().reverse();
                 });
+
+                const filteredHistory = computed(() => {
+                    let list = receiptHistory.value.filter(r => r.companyId === selectedCompanyId.value);
+
+                    // Filter by Year
+                    if (historyFilterYear.value !== 'TODOS') {
+                        list = list.filter(r => r.receiptData.periodo.includes(historyFilterYear.value.toString()));
+                    }
+
+                    // Filter by Month
+                    if (historyFilterMonth.value !== 'TODOS') {
+                        list = list.filter(r => r.receiptData.periodo.startsWith(historyFilterMonth.value));
+                    }
+
+                    return list.sort((a, b) => b.timestamp - a.timestamp); // Newest first
+                });
+
+                const totalHistoryPages = computed(() => Math.ceil(filteredHistory.value.length / historyItemsPerPage));
+
+                const paginatedHistory = computed(() => {
+                    const start = (historyPage.value - 1) * historyItemsPerPage;
+                    const end = start + historyItemsPerPage;
+                    return filteredHistory.value.slice(start, end);
+                });
+
+                const nextHistoryPage = () => {
+                    if (historyPage.value < totalHistoryPages.value) historyPage.value++;
+                };
+                const prevHistoryPage = () => {
+                    if (historyPage.value > 1) historyPage.value--;
+                };
+
+                // Reset page when filters change
+                watch([historyFilterYear, historyFilterMonth], () => historyPage.value = 1);
 
                 const saveReceipt = () => {
                     if (!employee.value.nombre) return alert('No se puede guardar: Falta nombre del empleado');
@@ -1829,13 +2012,19 @@
 
                 const loadFromHistory = (rec) => {
                     if (!window.confirm('Cargar este recibo reemplazará los datos actuales en pantalla. ¿Continuar?')) return;
+                    _loadRecData(rec);
+                    isSACMode.value = false;
+                    closeHistoryModal();
+                    addToast('Recibo cargado desde historial', 'info');
+                };
 
+                // Helper to load data without confirmation/toast
+                const _loadRecData = (rec) => {
                     // Deep clone to prevent reactivity issues
                     employee.value = JSON.parse(JSON.stringify(rec.employee));
                     receipt.value = JSON.parse(JSON.stringify(rec.receiptData));
                     concepts.value = JSON.parse(JSON.stringify(rec.concepts));
 
-                    // Reverse Sync Period Pickers
                     try {
                         const parts = rec.receiptData.periodo.split(' DE ');
                         if (parts.length === 2 && months.includes(parts[0])) {
@@ -1843,10 +2032,36 @@
                             periodYear.value = parseInt(parts[1]);
                         }
                     } catch (e) { }
+                };
 
-                    isSACMode.value = false;
-                    closeHistoryModal();
-                    addToast('Recibo cargado desde historial', 'info');
+                const printFromHistory = async (rec) => {
+                    // 1. Backup Current State
+                    const backup = {
+                        emp: JSON.stringify(employee.value),
+                        rec: JSON.stringify(receipt.value),
+                        conc: JSON.stringify(concepts.value),
+                        perM: periodMonth.value,
+                        perY: periodYear.value
+                    };
+
+                    // 2. Load History Data
+                    _loadRecData(rec);
+
+                    // 3. Wait for DOM Update
+                    await Vue.nextTick();
+
+                    // 4. Print
+                    window.print();
+
+                    // 5. Restore State (after a small delay to ensure print dialog caught it)
+                    // Note: window.print() is blocking in many browsers, but we use setTimeout for safety
+                    setTimeout(() => {
+                        employee.value = JSON.parse(backup.emp);
+                        receipt.value = JSON.parse(backup.rec);
+                        concepts.value = JSON.parse(backup.conc);
+                        periodMonth.value = backup.perM;
+                        periodYear.value = backup.perY;
+                    }, 500);
                 };
 
                 // BACKUP & RESTORE
@@ -1899,6 +2114,42 @@
                             employeesList.value = parsed.employeesList || [];
                             selectedCompanyId.value = parsed.selectedCompanyId;
                             receiptHistory.value = parsed.receiptHistory || [];
+                            receiptHistory.value = parsed.receiptHistory || [];
+
+                            // MIGRATION: UPPERCASE EMPLOYEES (Data Normalization)
+                            if (employeesList.value.length > 0) {
+                                let changed = false;
+                                employeesList.value.forEach(e => {
+                                    const n = e.nombre.toUpperCase();
+                                    const cat = (e.categoria || '').toUpperCase();
+                                    const leg = (e.legajo || '').toUpperCase();
+                                    if (e.nombre !== n || e.categoria !== cat || e.legajo !== leg) {
+                                        e.nombre = n;
+                                        e.categoria = cat;
+                                        e.legajo = leg;
+                                        changed = true;
+                                    }
+                                });
+                                if (changed) saveGlobalData();
+                            }
+
+                            // MIGRATION: UPPERCASE HISTORY (Fix retroactive data)
+                            if (receiptHistory.value.length > 0) {
+                                let historyChanged = false;
+                                receiptHistory.value.forEach(rec => {
+                                    if (rec.employee) {
+                                        const n = (rec.employee.nombre || '').toUpperCase();
+                                        const c = (rec.employee.categoria || '').toUpperCase();
+                                        if (rec.employee.nombre !== n || rec.employee.categoria !== c) {
+                                            rec.employee.nombre = n;
+                                            rec.employee.categoria = c;
+                                            historyChanged = true;
+                                        }
+                                    }
+                                });
+                                if (historyChanged) saveGlobalData();
+                            }
+
                             if (parsed.appConfig) {
                                 // MIGRATION & SAFETY: Ensure deductions exist and are not empty
                                 if (parsed.appConfig.deductions && parsed.appConfig.deductions.length > 0) {
@@ -1964,19 +2215,58 @@
 
                 watch([companiesList, employeesList, selectedCompanyId, appConfig], saveGlobalData, { deep: true });
 
+                // RECEIPT SCALING LOGIC
+                const receiptScale = ref(1);
+                const previewContainer = ref(null);
+
+                const updateScale = () => {
+                    if (!previewContainer.value) return;
+                    const containerWidth = previewContainer.value.clientWidth;
+                    // A4 Width approx 794px. We add some buffer.
+                    // Let's say target width is 800px.
+                    const targetWidth = 820;
+
+                    let newScale = Math.min(1, (containerWidth - 40) / targetWidth);
+                    newScale = Math.max(0.3, newScale);
+                    receiptScale.value = newScale;
+                };
+
+                const adjustScale = (delta) => {
+                    receiptScale.value = Math.max(0.3, Math.min(2, receiptScale.value + delta));
+                };
+
+                onMounted(() => {
+                    // Adding observer for resize
+                    if (previewContainer.value) {
+                        const resizeObserver = new ResizeObserver(() => {
+                            requestAnimationFrame(updateScale);
+                        });
+                        resizeObserver.observe(previewContainer.value);
+                    }
+                    window.addEventListener('resize', updateScale);
+                    setTimeout(updateScale, 500);
+                });
+
+                // Watch sidebar resize
+                watch(sidebarWidth, () => {
+                    requestAnimationFrame(updateScale);
+                });
+
                 return {
+                    receiptScale, previewContainer, updateScale, adjustScale,
                     companiesList, selectedCompanyId, company,
                     showCompanyModal, isEditingCompany, companyForm, openCompanyModal, closeCompanyModal, saveCompanyForm, editCompany, cancelEditCompany, deleteCompany,
                     showConfigModal, appConfig, openConfigModal, closeConfigModal, saveConfig, toasts, addDeductionConfig, removeDeductionConfig,
                     handleLogoUpload, exportBackup, importBackup, getDynamicFontSize,
                     employeesList, filteredEmployees, loadEmployee, updateCurrentEmployee, employee,
-                    showNewEmployeeModal, newEmployeeForm, openNewEmployeeModal, closeNewEmployeeModal, saveEmployeeForm, isEditingEmployee, openEditEmployeeModal, deleteEmployee,
+                    showNewEmployeeModal, newEmployeeForm, openNewEmployeeModal, closeNewEmployeeModal, saveEmployeeForm, isEditingEmployee, openEditEmployeeModal, deleteEmployee, deleteSelectedEmployee, headerSubtitle,
                     employeeSearch, showEmployeeList, employeeSearchResults, selectEmployeeSearch, searchContainer,
                     receipt, concepts, isSACMode, sacBestSalary, processedConcepts, totalRemunerativo, totalNoRemunerativo, totalHaberes, totalDeducciones, netoPercibir,
                     calculateSAC, autoCalculateDeductions, addConceptSemiblank, removeConcept, printReceipt, formatCurrency, formatCurrencyPlain, formatNumber, numeroALetras,
 
                     // History
                     saveReceipt, receiptHistory, showHistoryModal, openHistoryModal, closeHistoryModal, deleteFromHistory, loadFromHistory, filteredHistory,
+                    historyFilterYear, historyFilterMonth, historyPage, availableHistoryYears, paginatedHistory, totalHistoryPages, historyItemsPerPage, nextHistoryPage, prevHistoryPage, printFromHistory,
 
                     // Resizable Sidebar
                     sidebarWidth, isResizing, startResizing,
