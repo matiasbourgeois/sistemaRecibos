@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -471,8 +471,48 @@
                             <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                             Conceptos del Recibo
                         </h3>
+                        <!-- BOTÓN ACCESO BIBLIOTECA -->
+                        <button @click="openConceptLibraryModal"
+                            class="w-full py-3 bg-indigo-50 border-2 border-indigo-100 text-indigo-600 font-black text-[10px] rounded-xl hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center uppercase tracking-widest shadow-sm">
+                            <i class="fa-solid fa-book-open mr-2"></i> Biblioteca de Conceptos
+                        </button>
 
-                        <div class="bg-white space-y-2">
+                        <!-- BUSCADOR DE BIBLIOTECA -->
+                        <div class="relative group mt-2">
+                            <div class="relative">
+                                <i
+                                    class="fa-solid fa-search absolute left-4 top-3 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-[10px]"></i>
+                                <input type="text" v-model="librarySearchQuery"
+                                    class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 text-[10px] shadow-sm uppercase"
+                                    placeholder="BUSCAR EN BIBLIOTECA...">
+                            </div>
+
+                            <!-- Dropdown de resultados -->
+                            <transition name="toast">
+                                <div v-if="filteredLibraryConcepts.length > 0"
+                                    class="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 z-[60] py-2 max-h-[300px] overflow-y-auto">
+                                    <button v-for="lib in filteredLibraryConcepts" :key="lib.id"
+                                        @click="selectLibraryConcept(lib)"
+                                        class="w-full px-4 py-2 hover:bg-indigo-50 flex items-center justify-between transition-colors border-b border-slate-50 last:border-0">
+                                        <div class="text-left">
+                                            <div class="text-[10px] font-black text-slate-700 uppercase">{{
+                                                lib.description }}</div>
+                                            <div class="text-[8px] font-bold text-indigo-500">COD: #{{ lib.code }}</div>
+                                        </div>
+                                        <div class="flex flex-col items-end">
+                                            <div class="text-[9px] font-black text-slate-400">{{
+                                                formatCurrency(lib.defaultPrice) }}</div>
+                                            <div class="text-[7px] font-black px-1.5 py-0.5 rounded"
+                                                :class="lib.type === 'REM' ? 'bg-green-100 text-green-600' : (lib.type === 'DED' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600')">
+                                                {{ lib.type }}
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </transition>
+                        </div>
+
+                        <div class="bg-white space-y-2 mt-4">
                             <div v-for="(item, index) in concepts" :key="index"
                                 class="flex items-center space-x-2 p-1 group hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition-all">
 
@@ -512,30 +552,18 @@
                                 </button>
                             </div>
 
-                            <div class="grid grid-cols-3 gap-3 pt-3">
+                            <div class="flex gap-2 mt-4 px-1">
                                 <button @click="addConceptSemiblank('REM')"
-                                    class="bg-white hover:bg-cyan-50 text-slate-600 hover:text-cyan-700 px-2 py-3 rounded-xl text-[10px] font-black border border-gray-200 hover:border-cyan-300 transition-all uppercase shadow-sm flex flex-row items-center justify-center gap-2 group hover:-translate-y-0.5">
-                                    <div
-                                        class="w-6 h-6 shrink-0 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 group-hover:scale-110 transition-transform">
-                                        <i class="fa-solid fa-plus text-xs"></i>
-                                    </div>
-                                    <span>Haberes</span>
+                                    class="flex-1 py-3 bg-white border-2 border-slate-100 text-slate-600 font-black text-[10px] rounded-xl hover:border-green-500 hover:text-green-600 transition-all flex items-center justify-center uppercase tracking-widest shadow-sm">
+                                    <i class="fa-solid fa-plus-circle mr-2"></i> Rem
                                 </button>
                                 <button @click="addConceptSemiblank('NO_REM')"
-                                    class="bg-white hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 px-2 py-3 rounded-xl text-[10px] font-black border border-gray-200 hover:border-indigo-300 transition-all uppercase shadow-sm flex flex-row items-center justify-center gap-2 group hover:-translate-y-0.5">
-                                    <div
-                                        class="w-6 h-6 shrink-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
-                                        <i class="fa-solid fa-asterisk text-xs"></i>
-                                    </div>
-                                    <span>No Remun.</span>
+                                    class="flex-1 py-3 bg-white border-2 border-slate-100 text-slate-600 font-black text-[10px] rounded-xl hover:border-blue-500 hover:text-blue-600 transition-all flex items-center justify-center uppercase tracking-widest shadow-sm">
+                                    <i class="fa-solid fa-plus-circle mr-2"></i> No Rem
                                 </button>
                                 <button @click="addConceptSemiblank('DED')"
-                                    class="bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 px-2 py-3 rounded-xl text-[10px] font-black border border-gray-200 hover:border-rose-300 transition-all uppercase shadow-sm flex flex-row items-center justify-center gap-2 group hover:-translate-y-0.5">
-                                    <div
-                                        class="w-6 h-6 shrink-0 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 group-hover:scale-110 transition-transform">
-                                        <i class="fa-solid fa-minus text-xs"></i>
-                                    </div>
-                                    <span>Deducción</span>
+                                    class="flex-1 py-3 bg-white border-2 border-slate-100 text-slate-600 font-black text-[10px] rounded-xl hover:border-red-500 hover:text-red-600 transition-all flex items-center justify-center uppercase tracking-widest shadow-sm">
+                                    <i class="fa-solid fa-minus-circle mr-2"></i> Ded
                                 </button>
                             </div>
 
@@ -1341,6 +1369,168 @@
             </div>
         </transition>
 
+        <!-- MODAL BIBLIOTECA DE CONCEPTOS -->
+        <transition name="toast">
+            <div v-if="showConceptLibraryModal"
+                class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+                <!-- Backdrop -->
+                <div @click="closeConceptLibraryModal" class="absolute inset-0 bg-slate-900/60 backdrop-blur-md"></div>
+
+                <!-- Modal Card -->
+                <div
+                    class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl overflow-hidden relative flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
+                    <!-- HEADER -->
+                    <div
+                        class="px-8 py-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center shrink-0">
+                        <div>
+                            <h3 class="text-2xl font-black text-slate-800 tracking-tight flex items-center uppercase">
+                                <span
+                                    class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mr-4 shadow-sm border border-indigo-200">
+                                    <i class="fa-solid fa-book"></i>
+                                </span>
+                                Biblioteca de Conceptos
+                            </h3>
+                            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1 ml-14">
+                                Gestioná tus conceptos frecuentes para carga rápida
+                            </p>
+                        </div>
+                        <button @click="closeConceptLibraryModal"
+                            class="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-400 transition-colors">
+                            <i class="fa-solid fa-xmark text-xl"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-8 flex flex-col md:flex-row gap-8 scrollbar-hide">
+                        <!-- FORMULARIO DE CARGA (IZQUIERDA) -->
+                        <div class="w-full md:w-1/3 space-y-5">
+                            <div class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4 shadow-sm">
+                                <h4
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center px-1">
+                                    <i class="fa-solid fa-plus-circle mr-2 text-indigo-400"></i>
+                                    {{ isEditingLibraryConcept ? 'Editar Concepto' : 'Nuevo Concepto' }}
+                                </h4>
+
+                                <!-- CODIGO -->
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Código</label>
+                                    <input type="text" v-model="libraryConceptForm.code"
+                                        class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-slate-700 text-xs"
+                                        placeholder="EJ: 001">
+                                </div>
+
+                                <!-- DESCRIPCION -->
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Descripción</label>
+                                    <input type="text" v-model="libraryConceptForm.description"
+                                        class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-slate-700 uppercase text-xs"
+                                        placeholder="SUELDO BASICO">
+                                </div>
+
+                                <!-- TIPO -->
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Tipo</label>
+                                    <select v-model="libraryConceptForm.type"
+                                        class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-slate-700 text-xs cursor-pointer">
+                                        <option value="REM">REMUNERATIVO</option>
+                                        <option value="NO_REM">NO REMUNERATIVO</option>
+                                        <option value="DED">DEDUCCIÓN</option>
+                                    </select>
+                                </div>
+
+                                <!-- PRECIO POR DEFECTO -->
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Precio
+                                        Unitario ($)</label>
+                                    <input type="number" v-model.number="libraryConceptForm.defaultPrice"
+                                        class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono font-bold text-slate-700 text-xs"
+                                        placeholder="0.00">
+                                </div>
+
+                                <button @click="saveLibraryConcept"
+                                    class="w-full py-4 bg-indigo-600 text-white font-black text-xs rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-wider">
+                                    {{ isEditingLibraryConcept ? 'Guardar Cambios' : 'Añadir a Biblioteca' }}
+                                </button>
+
+                                <button v-if="isEditingLibraryConcept" @click="resetLibraryConceptForm"
+                                    class="w-full py-2 text-slate-400 font-bold text-[9px] uppercase tracking-widest hover:text-slate-600 transition-colors">
+                                    Cancelar Edición
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- LISTADO (DERECHA) -->
+                        <div class="flex-1 space-y-4">
+                            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Conceptos
+                                Guardados</h4>
+                            <div class="border border-slate-100 rounded-3xl overflow-hidden bg-white shadow-sm">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50 border-b border-slate-100">
+                                            <th
+                                                class="px-5 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                Cod</th>
+                                            <th
+                                                class="px-5 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                Descripción</th>
+                                            <th
+                                                class="px-5 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">
+                                                Valor Def.</th>
+                                            <th
+                                                class="px-5 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50">
+                                        <tr v-for="c in conceptLibrary" :key="c.id"
+                                            class="hover:bg-slate-50 transition-colors group">
+                                            <td class="px-5 py-4 text-[10px] font-black text-indigo-600 font-mono">#{{
+                                                c.code }}</td>
+                                            <td class="px-5 py-4">
+                                                <div
+                                                    class="text-[11px] font-bold text-slate-700 uppercase line-clamp-1">
+                                                    {{ c.description }}</div>
+                                                <div class="text-[8px] font-bold px-2 py-0.5 rounded-full inline-block mt-1 uppercase"
+                                                    :class="c.type === 'REM' ? 'bg-green-50 text-green-600' : (c.type === 'DED' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600')">
+                                                    {{ c.type }}
+                                                </div>
+                                            </td>
+                                            <td
+                                                class="px-5 py-4 text-right text-[11px] font-mono font-bold text-slate-600">
+                                                {{ formatCurrency(c.defaultPrice) }}
+                                            </td>
+                                            <td class="px-5 py-4 text-center">
+                                                <div
+                                                    class="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button @click="editLibraryConcept(c)"
+                                                        class="w-8 h-8 bg-slate-100 text-slate-500 rounded-xl hover:bg-indigo-100 hover:text-indigo-600 transition-all flex items-center justify-center shadow-sm">
+                                                        <i class="fa-solid fa-pen-to-square text-[10px]"></i>
+                                                    </button>
+                                                    <button @click="deleteLibraryConcept(c.id)"
+                                                        class="w-8 h-8 bg-slate-100 text-slate-500 rounded-xl hover:bg-red-100 hover:text-red-600 transition-all flex items-center justify-center shadow-sm">
+                                                        <i class="fa-solid fa-trash text-[10px]"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="conceptLibrary.length === 0" class="animate-pulse">
+                                            <td colspan="4"
+                                                class="px-5 py-12 text-center text-slate-400 text-[11px] italic font-bold">
+                                                No hay conceptos guardados.<br>Empezá agregando uno a la izquierda.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
         <!-- TOAST SYSTEM -->
         <div class="fixed top-4 right-4 z-[100] space-y-2 no-print">
             <transition-group name="toast">
@@ -1362,6 +1552,14 @@
 
         createApp({
             setup() {
+                const addToast = (message, type = 'info') => {
+                    const id = Date.now();
+                    toasts.value.push({ id, message, type });
+                    setTimeout(() => {
+                        toasts.value = toasts.value.filter(t => t.id !== id);
+                    }, 3000);
+                };
+
                 // ==========================================
                 // GESTION MULTI-EMPRESA
                 // ==========================================
@@ -1429,12 +1627,76 @@
                 };
 
                 const toasts = ref([]);
-                const addToast = (message, type = 'info') => {
-                    const id = Date.now();
-                    toasts.value.push({ id, message, type });
-                    setTimeout(() => {
-                        toasts.value = toasts.value.filter(t => t.id !== id);
-                    }, 3000);
+
+                // ==========================================
+                // GESTION BIBLIOTECA DE CONCEPTOS
+                // ==========================================
+                const conceptLibrary = ref([]);
+                const showConceptLibraryModal = ref(false);
+                const isEditingLibraryConcept = ref(false);
+                const libraryConceptForm = ref({ id: null, code: '', description: '', type: 'REM', defaultPrice: 0 });
+
+                const openConceptLibraryModal = () => {
+                    showConceptLibraryModal.value = true;
+                    resetLibraryConceptForm();
+                };
+                const closeConceptLibraryModal = () => showConceptLibraryModal.value = false;
+                const resetLibraryConceptForm = () => {
+                    isEditingLibraryConcept.value = false;
+                    libraryConceptForm.value = { id: null, code: '', description: '', type: 'REM', defaultPrice: 0 };
+                };
+
+                const saveLibraryConcept = () => {
+                    const f = libraryConceptForm.value;
+                    if (!f.description) return addToast('La descripción es obligatoria', 'error');
+
+                    f.description = f.description.toUpperCase();
+                    f.code = (f.code || '').toUpperCase();
+
+                    if (isEditingLibraryConcept.value) {
+                        const idx = conceptLibrary.value.findIndex(c => c.id === f.id);
+                        if (idx !== -1) conceptLibrary.value[idx] = { ...f };
+                    } else {
+                        const newConcept = { ...f, id: 'lib_' + Date.now() };
+                        conceptLibrary.value.push(newConcept);
+                    }
+                    saveGlobalData();
+                    resetLibraryConceptForm();
+                    addToast('Concepto guardado en biblioteca', 'success');
+                };
+
+                const editLibraryConcept = (concept) => {
+                    isEditingLibraryConcept.value = true;
+                    libraryConceptForm.value = { ...concept };
+                };
+
+                const deleteLibraryConcept = (id) => {
+                    if (!confirm('¿Eliminar este concepto de la biblioteca?')) return;
+                    conceptLibrary.value = conceptLibrary.value.filter(c => c.id !== id);
+                    saveGlobalData();
+                };
+
+                // Búsqueda e Inserción
+                const librarySearchQuery = ref('');
+                const filteredLibraryConcepts = computed(() => {
+                    if (!librarySearchQuery.value) return [];
+                    const q = librarySearchQuery.value.toLowerCase();
+                    return conceptLibrary.value.filter(c =>
+                        c.description.toLowerCase().includes(q) ||
+                        c.code.toLowerCase().includes(q)
+                    );
+                });
+
+                const selectLibraryConcept = (libConcept) => {
+                    concepts.value.push({
+                        cantidad: 0,
+                        descripcion: libConcept.description,
+                        valorUnitario: libConcept.defaultPrice || 0,
+                        tipo: libConcept.type,
+                        code: libConcept.code // Guardamos el código aunque no se imprima
+                    });
+                    librarySearchQuery.value = '';
+                    addToast('Concepto agregado al recibo', 'success');
                 };
 
                 const editCompany = (comp) => {
@@ -1622,14 +1884,14 @@
                 });
 
                 const employee = ref({
-                    id: 'emp_zarate',
-                    nombre: 'ZARATE MAURICIO ERIC',
-                    cuil: '20-30900903-8',
-                    legajo: '822.26',
-                    ingreso: '17/01/2017',
-                    antiguedad: 8,
-                    categoria: 'CONDUCTOR DE 1ra',
-                    companyId: 'comp_default'
+                    id: null,
+                    nombre: '',
+                    cuil: '',
+                    legajo: '',
+                    ingreso: '',
+                    antiguedad: 0,
+                    categoria: '',
+                    companyId: null
                 });
 
                 const loadEmployee = (empData) => {
@@ -1687,23 +1949,14 @@
 
                 // DATOS RECIBO
                 const receipt = ref({
-                    periodo: 'SEPTICEBRE DE 2025',
-                    fechaPago: '06/10/2025',
-                    ultimoDeposito: 'Banco',
+                    periodo: '',
+                    fechaPago: '',
+                    ultimoDeposito: '',
                     salarioFamiliar: 0
                 });
 
                 // CONCEPTOS
-                const concepts = ref([
-                    { cantidad: 0, descripcion: 'SUELDO BASICO', valorUnitario: 802759.89, tipo: 'REM' },
-                    { cantidad: 0, descripcion: 'ADICIONAL ESPECIALIDAD', valorUnitario: 120413.89, tipo: 'REM' },
-                    { cantidad: 0, descripcion: 'CONTROL DE DESCARGA', valorUnitario: 334483.00, tipo: 'REM' },
-                    { cantidad: 0, descripcion: 'ANTIGUEDAD', valorUnitario: 124157.75, tipo: 'REM' },
-                    { cantidad: 0, descripcion: 'DIF POR KM RECORRIDO', valorUnitario: 20.66, tipo: 'REM' },
-                    { cantidad: 9791.00, descripcion: 'ADIC. POR KM RECORRIDO', valorUnitario: 64.22, tipo: 'REM' },
-                    { cantidad: 0, descripcion: 'BONO NO REMUNERATIVO', valorUnitario: 25000.00, tipo: 'NO_REM' },
-                    { cantidad: 0, descripcion: 'VIATICO POR KM RECORRIDO', valorUnitario: 628798.68, tipo: 'NO_REM' }
-                ]);
+                const concepts = ref([]);
 
                 // VARIABLES AUXILIARES
                 const isSACMode = ref(false);
@@ -2098,6 +2351,7 @@
                         employeesList: employeesList.value,
                         receiptHistory: receiptHistory.value,
                         appConfig: appConfig.value,
+                        conceptLibrary: conceptLibrary.value,
                         // Save last visual state preference too
                         lastPeriod: { m: periodMonth.value, y: periodYear.value }
                     };
@@ -2114,7 +2368,7 @@
                             employeesList.value = parsed.employeesList || [];
                             selectedCompanyId.value = parsed.selectedCompanyId;
                             receiptHistory.value = parsed.receiptHistory || [];
-                            receiptHistory.value = parsed.receiptHistory || [];
+                            conceptLibrary.value = parsed.conceptLibrary || [];
 
                             // MIGRATION: UPPERCASE EMPLOYEES (Data Normalization)
                             if (employeesList.value.length > 0) {
@@ -2272,7 +2526,12 @@
                     sidebarWidth, isResizing, startResizing,
 
                     // Period
-                    months, periodMonth, periodYear
+                    months, periodMonth, periodYear,
+
+                    // Biblioteca de Conceptos
+                    conceptLibrary, showConceptLibraryModal, isEditingLibraryConcept, libraryConceptForm,
+                    openConceptLibraryModal, closeConceptLibraryModal, saveLibraryConcept, editLibraryConcept, deleteLibraryConcept,
+                    librarySearchQuery, filteredLibraryConcepts, selectLibraryConcept
                 };
             }
         }).mount('#app');
@@ -2280,3 +2539,4 @@
 </body>
 
 </html>
+```
