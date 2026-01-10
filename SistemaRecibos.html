@@ -1453,7 +1453,7 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-50">
-                                        <tr v-for="c in conceptLibrary" :key="c.id"
+                                        <tr v-for="c in paginatedLibraryConcepts" :key="c.id"
                                             class="hover:bg-slate-50 transition-colors group">
                                             <td class="px-5 py-4 text-[10px] font-black text-indigo-600 font-mono">#{{
                                                 c.code }}</td>
@@ -1492,6 +1492,24 @@
                                         </tr>
                                     </tbody>
                                 </table>
+
+                                <!-- PAGINACION BIBLIOTECA -->
+                                <div v-if="totalLibraryPages > 1"
+                                    class="bg-slate-50/50 p-4 border-t border-slate-100 flex items-center justify-between">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                        Página {{ libraryPage }} de {{ totalLibraryPages }}
+                                    </span>
+                                    <div class="flex gap-2">
+                                        <button @click="prevLibraryPage" :disabled="libraryPage === 1"
+                                            class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-200 transition-all shadow-sm">
+                                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                                        </button>
+                                        <button @click="nextLibraryPage" :disabled="libraryPage === totalLibraryPages"
+                                            class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-200 transition-all shadow-sm">
+                                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1606,6 +1624,7 @@
 
                 const openConceptLibraryModal = () => {
                     showConceptLibraryModal.value = true;
+                    libraryPage.value = 1; // Reset to first page
                     resetLibraryConceptForm();
                 };
                 const closeConceptLibraryModal = () => showConceptLibraryModal.value = false;
@@ -1620,6 +1639,12 @@
 
                     f.description = f.description.toUpperCase();
                     f.code = (f.code || '').toUpperCase();
+
+                    // VALIDACIÓN: Código duplicado
+                    const exists = conceptLibrary.value.find(c => c.code === f.code && c.id !== f.id);
+                    if (exists && f.code) {
+                        return addToast(`El código "${f.code}" ya existe en la biblioteca`, 'error');
+                    }
 
                     if (isEditingLibraryConcept.value) {
                         const idx = conceptLibrary.value.findIndex(c => c.id === f.id);
@@ -1641,7 +1666,30 @@
                 const deleteLibraryConcept = (id) => {
                     if (!confirm('¿Eliminar este concepto de la biblioteca?')) return;
                     conceptLibrary.value = conceptLibrary.value.filter(c => c.id !== id);
+                    if (libraryPage.value > totalLibraryPages.value && libraryPage.value > 1) {
+                        libraryPage.value--;
+                    }
                     saveGlobalData();
+                };
+
+                // Paginación de Biblioteca
+                const libraryPage = ref(1);
+                const libraryItemsPerPage = 6;
+
+                const totalLibraryPages = computed(() => {
+                    return Math.ceil(conceptLibrary.value.length / libraryItemsPerPage);
+                });
+
+                const paginatedLibraryConcepts = computed(() => {
+                    const idx = (libraryPage.value - 1) * libraryItemsPerPage;
+                    return conceptLibrary.value.slice(idx, idx + libraryItemsPerPage);
+                });
+
+                const nextLibraryPage = () => {
+                    if (libraryPage.value < totalLibraryPages.value) libraryPage.value++;
+                };
+                const prevLibraryPage = () => {
+                    if (libraryPage.value > 1) libraryPage.value--;
                 };
 
                 // Búsqueda e Inserción
@@ -2473,7 +2521,8 @@
                     // Biblioteca de Conceptos
                     conceptLibrary, showConceptLibraryModal, isEditingLibraryConcept, libraryConceptForm,
                     openConceptLibraryModal, closeConceptLibraryModal, saveLibraryConcept, editLibraryConcept, deleteLibraryConcept,
-                    librarySearchQuery, filteredLibraryConcepts, selectLibraryConcept
+                    librarySearchQuery, filteredLibraryConcepts, selectLibraryConcept,
+                    libraryPage, totalLibraryPages, paginatedLibraryConcepts, nextLibraryPage, prevLibraryPage
                 };
             }
         }).mount('#app');
