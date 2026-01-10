@@ -317,7 +317,13 @@
 
                     <!-- SECCION 2: EMPLEADO -->
                     <div class="space-y-4">
-                        <!-- 1. Buscador (Search Bar) -->
+                        <!-- 1. Título -->
+                        <h3 class="font-bold text-xs text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                            Empleado
+                        </h3>
+
+                        <!-- 2. Buscador (Search Bar) -->
                         <div class="relative group" ref="searchContainer">
                             <input type="text" v-model="employeeSearch" @focus="showEmployeeList = true"
                                 @keyup.esc="showEmployeeList = false" placeholder="BUSCAR EMPLEADO..."
@@ -339,33 +345,27 @@
                             </div>
                         </div>
 
-                        <!-- 2. Header (Title + Buttons) -->
-                        <div class="flex justify-between items-end">
-                            <h3
-                                class="font-bold text-xs text-slate-400 uppercase tracking-widest flex items-center gap-2 truncate max-w-[60%]">
-                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0"></span>
-                                {{ employee.nombre ? employee.nombre : 'EMPLEADO NO SELECCIONADO' }}
-                            </h3>
-                            <div class="shrink-0 flex items-center gap-1">
-                                <button @click="openEditEmployeeModal"
-                                    class="w-9 h-9 rounded-lg border border-transparent hover:border-cyan-200 hover:bg-cyan-50 text-slate-400 hover:text-cyan-600 flex items-center justify-center transition-all bg-white shadow-sm"
-                                    title="Editar datos">
-                                    <i class="fa-solid fa-pen text-xs"></i>
-                                </button>
-                                <button @click="deleteSelectedEmployee"
-                                    class="w-9 h-9 rounded-lg border border-transparent hover:border-red-200 hover:bg-red-50 text-slate-400 hover:text-red-600 flex items-center justify-center transition-all bg-white shadow-sm"
-                                    title="Eliminar empleado">
-                                    <i class="fa-solid fa-trash text-xs"></i>
-                                </button>
-                                <button @click="openNewEmployeeModal"
-                                    class="text-cyan-600 font-bold text-xs bg-cyan-50 px-4 py-2 rounded-lg hover:bg-cyan-100 transition-colors border border-cyan-100 flex items-center h-9 ml-1">
-                                    + NUEVO
-                                </button>
-                            </div>
+                        <!-- 3. Botones de Acción -->
+                        <div class="flex items-center gap-2">
+                            <button @click="openNewEmployeeModal"
+                                class="flex-1 text-cyan-600 font-bold text-xs bg-cyan-50 px-4 py-2.5 rounded-lg hover:bg-cyan-100 transition-colors border border-cyan-100 flex items-center justify-center h-10">
+                                <i class="fa-solid fa-plus mr-2"></i> NUEVO
+                            </button>
+                            <button @click="openEditEmployeeModal"
+                                class="w-10 h-10 rounded-lg border border-transparent hover:border-cyan-200 hover:bg-cyan-50 text-slate-400 hover:text-cyan-600 flex items-center justify-center transition-all bg-white shadow-sm"
+                                title="Editar datos">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button @click="deleteSelectedEmployee"
+                                class="w-10 h-10 rounded-lg border border-transparent hover:border-red-200 hover:bg-red-50 text-slate-400 hover:text-red-600 flex items-center justify-center transition-all bg-white shadow-sm"
+                                title="Eliminar empleado">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
                         </div>
 
-                        <!-- 3. Details Card -->
-                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative space-y-4">
+                        <!-- 4. Details Card (Solo si hay empleado seleccionado) -->
+                        <div v-if="employee.id"
+                            class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                             <!-- Overlay de Seguridad (Read Only Hint) -->
                             <div v-if="!isEditingEmployee" class="absolute inset-0 z-10 bg-slate-50/5 cursor-default"
                                 title="Para editar, use el botón EDITAR (Lápiz)"></div>
@@ -381,7 +381,7 @@
                                     </div>
                                     <input type="text" v-model="employee.nombre" readonly
                                         class="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 focus:outline-none cursor-default shadow-sm tracking-wide"
-                                        placeholder="NOMBRE COMPLETO (Autoselección)">
+                                        placeholder="NOMBRE">
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-5">
