@@ -430,38 +430,6 @@
                     </div>
 
 
-                    <!-- SECCION 3: HERRAMIENTAS ESPECIALES -->
-                    <div class="space-y-4">
-                        <h3
-                            class="font-bold text-[10px] text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 rounded-full bg-violet-400"></span>
-                            Herramientas
-                        </h3>
-                        <div class="grid grid-cols-1 gap-3">
-                            <div
-                                class="bg-violet-50/50 border border-violet-100 rounded-xl p-3 hover:border-violet-200 transition-colors">
-                                <label class="flex items-center space-x-2 cursor-pointer mb-2">
-                                    <input type="checkbox" v-model="isSACMode"
-                                        class="form-checkbox h-4 w-4 text-violet-600 rounded border-violet-300 focus:ring-violet-500">
-                                    <span class="font-bold text-violet-900 text-[11px] uppercase">Modo SAC
-                                        (Aguinaldo)</span>
-                                </label>
-                                <div v-if="isSACMode"
-                                    class="mt-2 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                                    <label class="block">
-                                        <span class="text-[9px] font-bold text-violet-700 uppercase">Mejor Sueldo
-                                            Semestre</span>
-                                        <div class="relative mt-1">
-                                            <span class="absolute left-3 top-2 text-violet-400 text-xs">$</span>
-                                            <input type="number" v-model.number="sacBestSalary" @input="calculateSAC"
-                                                class="w-full pl-6 pr-3 py-2 border border-violet-200 rounded-lg focus:ring-2 ring-violet-400 text-xs bg-white font-bold text-violet-800 outline-none"
-                                                placeholder="0.00">
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
 
                     <!-- SECCION 4: CONCEPTOS / ITEMS -->
@@ -1959,8 +1927,6 @@
                 const concepts = ref([]);
 
                 // VARIABLES AUXILIARES
-                const isSACMode = ref(false);
-                const sacBestSalary = ref(0);
 
                 // COMPUTED LOGICA
                 const processedConcepts = computed(() => {
@@ -1982,29 +1948,6 @@
 
 
                 // LOGICA SAC & DEDUCCIONES
-                const calculateSAC = () => {
-                    if (!isSACMode.value || sacBestSalary.value <= 0) return;
-                    const medioAguinaldo = sacBestSalary.value / 2;
-
-                    const newConcepts = [
-                        { cantidad: 0, descripcion: 'SAC 2DO SEMESTRE', valorUnitario: medioAguinaldo, tipo: 'REM' }
-                    ];
-
-                    appConfig.value.deductions.forEach(d => {
-                        // Skip 'afi' (Cuota de Afiliacion) in SAC mode as per user request
-                        if (d.rate > 0 && d.id !== 'afi') {
-                            newConcepts.push({
-                                cantidad: 0,
-                                descripcion: `${d.label} (${d.rate}%)`,
-                                valorUnitario: medioAguinaldo * (d.rate / 100),
-                                tipo: 'DED'
-                            });
-                        }
-                    });
-
-                    concepts.value = newConcepts;
-                    addToast('SAC Calculado', 'info');
-                };
 
                 const autoCalculateDeductions = () => {
                     const existingRem = concepts.value.filter(c => c.tipo !== 'DED');
@@ -2266,7 +2209,6 @@
                 const loadFromHistory = (rec) => {
                     if (!window.confirm('Cargar este recibo reemplazará los datos actuales en pantalla. ¿Continuar?')) return;
                     _loadRecData(rec);
-                    isSACMode.value = false;
                     closeHistoryModal();
                     addToast('Recibo cargado desde historial', 'info');
                 };
@@ -2467,7 +2409,7 @@
                     window.removeEventListener('mousedown', handleClickOutside);
                 });
 
-                watch([companiesList, employeesList, selectedCompanyId, appConfig], saveGlobalData, { deep: true });
+                watch([companiesList, employeesList, selectedCompanyId, appConfig, conceptLibrary, receiptHistory], saveGlobalData, { deep: true });
 
                 // RECEIPT SCALING LOGIC
                 const receiptScale = ref(1);
@@ -2515,8 +2457,8 @@
                     employeesList, filteredEmployees, loadEmployee, updateCurrentEmployee, employee,
                     showNewEmployeeModal, newEmployeeForm, openNewEmployeeModal, closeNewEmployeeModal, saveEmployeeForm, isEditingEmployee, openEditEmployeeModal, deleteEmployee, deleteSelectedEmployee, headerSubtitle,
                     employeeSearch, showEmployeeList, employeeSearchResults, selectEmployeeSearch, searchContainer,
-                    receipt, concepts, isSACMode, sacBestSalary, processedConcepts, totalRemunerativo, totalNoRemunerativo, totalHaberes, totalDeducciones, netoPercibir,
-                    calculateSAC, autoCalculateDeductions, addConceptSemiblank, removeConcept, printReceipt, formatCurrency, formatCurrencyPlain, formatNumber, numeroALetras,
+                    receipt, concepts, processedConcepts, totalRemunerativo, totalNoRemunerativo, totalHaberes, totalDeducciones, netoPercibir,
+                    autoCalculateDeductions, addConceptSemiblank, removeConcept, printReceipt, formatCurrency, formatCurrencyPlain, formatNumber, numeroALetras,
 
                     // History
                     saveReceipt, receiptHistory, showHistoryModal, openHistoryModal, closeHistoryModal, deleteFromHistory, loadFromHistory, filteredHistory,
