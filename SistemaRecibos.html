@@ -633,13 +633,15 @@
             <div class="flex-1 bg-slate-700 overflow-y-auto relative flex flex-col items-center justify-start py-8 custom-scrollbar"
                 ref="previewContainer">
                 <!-- Zoom Controls (Optional bonus) -->
-                <div class="fixed bottom-4 right-4 flex gap-2 z-50 opacity-50 hover:opacity-100 transition-opacity no-print">
+                <div class="fixed bottom-4 right-4 flex gap-1.5 z-50 opacity-60 hover:opacity-100 transition-opacity no-print bg-gray-900/80 backdrop-blur-sm rounded-xl p-1.5 border border-gray-700/50">
                     <button @click="adjustScale(-0.1)"
-                        class="bg-gray-800 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg hover:bg-black">-</button>
-                    <span class="bg-gray-800 text-white px-2 rounded-lg flex items-center text-xs h-8">{{
-                        Math.round(receiptScale * 100) }}%</span>
+                        class="bg-gray-700 hover:bg-gray-600 text-white rounded-lg w-8 h-8 flex items-center justify-center font-bold text-lg transition-colors">-</button>
+                    <button @click="resetZoom" :title="isManualZoom ? 'Volver a auto-fit' : 'Auto-fit activo'"
+                        class="text-white px-2.5 rounded-lg flex items-center text-[11px] font-bold h-8 transition-colors"
+                        :class="isManualZoom ? 'bg-cyan-600 hover:bg-cyan-500' : 'bg-gray-700'">{{
+                        Math.round(receiptScale * 100) }}%</button>
                     <button @click="adjustScale(0.1)"
-                        class="bg-gray-800 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg hover:bg-black">+</button>
+                        class="bg-gray-700 hover:bg-gray-600 text-white rounded-lg w-8 h-8 flex items-center justify-center font-bold text-lg transition-colors">+</button>
                 </div>
 
                 <!-- Fix: Force transform-origin in inline style and remove margin auto logic from class via overriding if needed, but margin: 0 auto is good for horizontal centering -->
@@ -1608,6 +1610,35 @@
     <!-- End of App Wrapper -->
 
     <script>
+        // ══════ ELECTRON FOCUS FIX ══════
+        // Native confirm() and alert() steal focus from the Electron renderer.
+        // After they close, the app becomes unresponsive until you alt-tab.
+        // This global override auto-refocuses after any native dialog.
+        (function() {
+            const _origConfirm = window.confirm;
+            const _origAlert = window.alert;
+            
+            window.confirm = function(msg) {
+                const result = _origConfirm.call(window, msg);
+                setTimeout(() => {
+                    document.body.focus();
+                    // Also try to focus the first visible input
+                    const active = document.querySelector('input:not([type=hidden]):not([disabled])');
+                    if (active) active.blur();
+                }, 50);
+                return result;
+            };
+            
+            window.alert = function(msg) {
+                _origAlert.call(window, msg);
+                setTimeout(() => {
+                    document.body.focus();
+                    const active = document.querySelector('input:not([type=hidden]):not([disabled])');
+                    if (active) active.blur();
+                }, 50);
+            };
+        })();
+
         const { createApp, ref, computed, onMounted, onBeforeUnmount, watch } = Vue;
 
         createApp({
@@ -1989,10 +2020,7 @@
 
                 const deleteEmployee = () => {
                     const f = newEmployeeForm.value;
-                    if (!confirm(`¿Estás seguro de que querés eliminar a ${f.nombre}? Esta acción no se puede deshacer.`)) {
-                        setTimeout(() => { document.body.focus(); }, 100);
-                        return;
-                    }
+                    if (!confirm(`¿Estás seguro de que querés eliminar a ${f.nombre}? Esta acción no se puede deshacer.`)) return;
 
                     employeesList.value = employeesList.value.filter(e => e.id !== f.id);
 
@@ -2004,29 +2032,19 @@
                     saveGlobalData();
                     showNewEmployeeModal.value = false;
                     addToast('Empleado eliminado correctamente', 'success');
-                    setTimeout(() => { document.body.focus(); }, 100);
                 };
 
                 const deleteSelectedEmployee = () => {
                     const emp = employee.value;
                     if (!emp.id) return;
 
-                    if (!confirm(`¿Estás seguro de que querés eliminar a ${emp.nombre}? Esta acción no se puede deshacer.`)) {
-                        // Fix Electron focus freeze after confirm() dialog
-                        setTimeout(() => { document.body.focus(); }, 100);
-                        return;
-                    }
+                    if (!confirm(`¿Estás seguro de que querés eliminar a ${emp.nombre}? Esta acción no se puede deshacer.`)) return;
 
                     employeesList.value = employeesList.value.filter(e => e.id !== emp.id);
-
-                    // Reset to empty state (don't auto-select another employee)
                     clearCurrentEmployee();
 
                     saveGlobalData();
                     addToast('Empleado eliminado correctamente', 'success');
-
-                    // Fix Electron focus freeze after confirm() dialog
-                    setTimeout(() => { document.body.focus(); }, 100);
                 };
 
                 // Reset: Clear current employee and receipt data
@@ -2650,21 +2668,28 @@
                 // RECEIPT SCALING LOGIC
                 const receiptScale = ref(1);
                 const previewContainer = ref(null);
+                const isManualZoom = ref(false); // Track if user manually zoomed
 
                 const updateScale = () => {
-                    if (!previewContainer.value) return;
+                    if (!previewContainer.value || isManualZoom.value) return;
                     const containerWidth = previewContainer.value.clientWidth;
-                    // A4 Width approx 794px. We add some buffer.
-                    // Let's say target width is 800px.
+                    // A4 landscape with 2 receipts side by side = ~820px
                     const targetWidth = 820;
-
-                    let newScale = Math.min(1, (containerWidth - 40) / targetWidth);
-                    newScale = Math.max(0.3, newScale);
-                    receiptScale.value = newScale;
+                    
+                    // Auto-fit: scale to fill available width (allow > 1 on big screens)
+                    let newScale = (containerWidth - 60) / targetWidth;
+                    newScale = Math.max(0.3, Math.min(1.5, newScale));
+                    receiptScale.value = Math.round(newScale * 100) / 100; // Round to 2 decimals
                 };
 
                 const adjustScale = (delta) => {
-                    receiptScale.value = Math.max(0.3, Math.min(2, receiptScale.value + delta));
+                    isManualZoom.value = true; // User took manual control
+                    receiptScale.value = Math.max(0.3, Math.min(2, Math.round((receiptScale.value + delta) * 10) / 10));
+                };
+                
+                const resetZoom = () => {
+                    isManualZoom.value = false;
+                    updateScale();
                 };
 
                 onMounted(() => {
@@ -2689,7 +2714,7 @@
 
                 return {
                     licenseInfo, showLicenseExpiredModal, checkLicense, showRenewalInput, renewalCode, renewalError, submitRenewalCode,
-                    receiptScale, previewContainer, updateScale, adjustScale,
+                    receiptScale, previewContainer, updateScale, adjustScale, resetZoom, isManualZoom,
                     companiesList, selectedCompanyId, company,
                     showCompanyModal, isEditingCompany, companyForm, openCompanyModal, closeCompanyModal, saveCompanyForm, editCompany, cancelEditCompany, deleteCompany,
                     showConfigModal, appConfig, openConfigModal, closeConfigModal, saveConfig, toasts, addDeductionConfig, removeDeductionConfig,
