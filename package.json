@@ -1,8 +1,53 @@
 {
-  "name": "sistemarecibos",
-  "version": "1.0.0",
+  "name": "sistema-recibos",
+  "version": "5.0.0",
+  "description": "Sistema de Recibos de Haberes - Supreme Edition",
   "main": "main.js",
   "author": "Matias Bourgeois",
-  "license": "ISC",
-  "description": "Sistema de Recibos Premium"
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64",
+    "build:portable": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.bourgeois.sistemarecibos",
+    "productName": "Sistema de Recibos",
+    "copyright": "Copyright © 2026 Matias Bourgeois",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Sistema de Recibos"
+    },
+    "files": [
+      "SistemaRecibos.html",
+      "main.js",
+      "license.js",
+      "preload.js",
+      "icon.png",
+      "libs/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    }
+  }
 }

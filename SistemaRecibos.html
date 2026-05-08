@@ -608,6 +608,18 @@
                                 <input type="file" @change="importBackup" class="hidden" accept=".json">
                             </label>
                         </div>
+                        <!-- LICENSE STATUS -->
+                        <div v-if="licenseInfo" class="mt-2 px-2 py-1.5 rounded-lg border text-center"
+                            :class="licenseInfo.valid ? (isDarkMode ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-emerald-200 bg-emerald-50') : (isDarkMode ? 'border-rose-500/20 bg-rose-500/5' : 'border-rose-200 bg-rose-50')">
+                            <div class="text-[8px] font-bold uppercase tracking-widest" 
+                                :class="licenseInfo.valid ? 'text-emerald-500' : 'text-rose-500'">
+                                <i :class="licenseInfo.valid ? 'fa-solid fa-shield-check' : 'fa-solid fa-shield-xmark'" class="mr-1"></i>
+                                {{ licenseInfo.valid ? 'Licencia Activa' : 'Licencia Expirada' }}
+                            </div>
+                            <div v-if="licenseInfo.valid" class="text-[7px] mt-0.5" :class="isDarkMode ? 'text-slate-500' : 'text-slate-400'">
+                                {{ licenseInfo.daysRemaining }} días restantes
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1532,6 +1544,33 @@
             </transition-group>
         </div>
 
+        <!-- LICENSE EXPIRATION MODAL -->
+        <transition name="toast">
+            <div v-if="showLicenseExpiredModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-lg"></div>
+                <div class="rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative animate-in zoom-in-95 duration-200 border"
+                    :class="isDarkMode ? 'bg-slate-900 border-slate-700/50' : 'bg-white border-slate-100'">
+                    <div class="p-8 text-center">
+                        <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-rose-500/10 flex items-center justify-center">
+                            <i class="fa-solid fa-shield-xmark text-3xl text-rose-500"></i>
+                        </div>
+                        <h2 class="text-2xl font-black uppercase tracking-tight mb-2"
+                            :class="isDarkMode ? 'text-white' : 'text-slate-800'">Licencia Expirada</h2>
+                        <p class="text-sm mb-4" :class="isDarkMode ? 'text-slate-400' : 'text-slate-500'">
+                            Tu licencia de uso ha vencido. Contactá al administrador para renovarla.
+                        </p>
+                        <div class="p-4 rounded-xl mb-4" :class="isDarkMode ? 'bg-slate-800' : 'bg-slate-50'">
+                            <div class="text-[10px] font-bold uppercase tracking-widest mb-1" :class="isDarkMode ? 'text-slate-500' : 'text-slate-400'">Machine ID</div>
+                            <div class="text-[9px] font-mono break-all" :class="isDarkMode ? 'text-slate-300' : 'text-slate-600'">{{ licenseInfo?.machineId }}</div>
+                        </div>
+                        <p class="text-[10px]" :class="isDarkMode ? 'text-slate-500' : 'text-slate-400'">
+                            Contacto: administrador del sistema
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
     </div>
     <!-- End of App Wrapper -->
 
@@ -1540,6 +1579,29 @@
 
         createApp({
             setup() {
+                // ==========================================
+                // LICENSE SYSTEM
+                // ==========================================
+                const licenseInfo = ref(null);
+                const showLicenseExpiredModal = ref(false);
+
+                const checkLicense = async () => {
+                    if (window.electronAPI && window.electronAPI.isElectron) {
+                        try {
+                            // Auto-activate if first run
+                            await window.electronAPI.activateLicense();
+                            // Get license info
+                            const info = await window.electronAPI.getLicenseInfo();
+                            licenseInfo.value = info;
+                            if (!info.valid && info.reason === 'EXPIRED') {
+                                showLicenseExpiredModal.value = true;
+                            }
+                        } catch (e) {
+                            console.log('License check skipped (browser mode)');
+                        }
+                    }
+                };
+
                 const addToast = (message, type = 'info') => {
                     const id = Date.now();
                     toasts.value.push({ id, message, type });
@@ -2560,6 +2622,9 @@
                 };
 
                 onMounted(() => {
+                    // Check license on startup
+                    checkLicense();
+                    
                     // Adding observer for resize
                     if (previewContainer.value) {
                         const resizeObserver = new ResizeObserver(() => {
@@ -2577,6 +2642,7 @@
                 });
 
                 return {
+                    licenseInfo, showLicenseExpiredModal, checkLicense,
                     receiptScale, previewContainer, updateScale, adjustScale,
                     companiesList, selectedCompanyId, company,
                     showCompanyModal, isEditingCompany, companyForm, openCompanyModal, closeCompanyModal, saveCompanyForm, editCompany, cancelEditCompany, deleteCompany,
