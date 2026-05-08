@@ -75,6 +75,35 @@ ipcMain.handle('app:version', async () => {
     return app.getVersion();
 });
 
+// ══════ NATIVE DIALOG HANDLERS (Fix focus freeze) ══════
+// Browser's confirm() and alert() steal focus in Electron.
+// These use Electron's own dialog module which properly returns focus.
+
+ipcMain.on('dialog:confirm', (event, message) => {
+    const result = dialog.showMessageBoxSync(mainWindow, {
+        type: 'question',
+        buttons: ['Sí', 'No'],
+        defaultId: 0,
+        cancelId: 1,
+        title: 'Sistema de Recibos',
+        message: message,
+        noLink: true
+    });
+    // result = 0 means "Sí" (first button), 1 means "No"
+    event.returnValue = result === 0;
+});
+
+ipcMain.on('dialog:alert', (event, message) => {
+    dialog.showMessageBoxSync(mainWindow, {
+        type: 'info',
+        buttons: ['OK'],
+        title: 'Sistema de Recibos',
+        message: message,
+        noLink: true
+    });
+    event.returnValue = true;
+});
+
 // ══════ PRINT IPC HANDLER ══════
 
 ipcMain.on('print-receipt', async (event) => {

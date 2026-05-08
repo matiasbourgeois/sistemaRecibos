@@ -3,6 +3,7 @@
  * Sistema de Recibos v5.0 Supreme Edition
  * 
  * Expone APIs seguras al frontend sin dar acceso directo a Node.js
+ * Incluye override de confirm/alert para evitar bug de foco en Electron
  */
 
 const { contextBridge, ipcRenderer } = require('electron');
@@ -18,6 +19,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     
     // App info
     getAppVersion: () => ipcRenderer.invoke('app:version'),
+    
+    // Native dialogs (fix focus freeze)
+    showConfirm: (message) => ipcRenderer.sendSync('dialog:confirm', message),
+    showAlert: (message) => ipcRenderer.sendSync('dialog:alert', message),
     
     // Platform detection
     isElectron: true

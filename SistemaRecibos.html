@@ -1610,32 +1610,31 @@
     <!-- End of App Wrapper -->
 
     <script>
-        // ══════ ELECTRON FOCUS FIX ══════
-        // Native confirm() and alert() steal focus from the Electron renderer.
-        // After they close, the app becomes unresponsive until you alt-tab.
-        // This global override auto-refocuses after any native dialog.
+        // ══════ ELECTRON FOCUS FIX — DEFINITIVE ══════
+        // In Electron, browser's confirm() and alert() steal focus permanently
+        // from the renderer process. The fix: use Electron's own dialog module
+        // via IPC, which properly manages window focus.
         (function() {
             const _origConfirm = window.confirm;
             const _origAlert = window.alert;
             
             window.confirm = function(msg) {
-                const result = _origConfirm.call(window, msg);
-                setTimeout(() => {
-                    document.body.focus();
-                    // Also try to focus the first visible input
-                    const active = document.querySelector('input:not([type=hidden]):not([disabled])');
-                    if (active) active.blur();
-                }, 50);
-                return result;
+                // Use Electron's native dialog if available (fixes focus)
+                if (window.electronAPI && window.electronAPI.showConfirm) {
+                    return window.electronAPI.showConfirm(msg);
+                }
+                // Fallback for browser mode
+                return _origConfirm.call(window, msg);
             };
             
             window.alert = function(msg) {
+                // Use Electron's native dialog if available (fixes focus)
+                if (window.electronAPI && window.electronAPI.showAlert) {
+                    window.electronAPI.showAlert(msg);
+                    return;
+                }
+                // Fallback for browser mode
                 _origAlert.call(window, msg);
-                setTimeout(() => {
-                    document.body.focus();
-                    const active = document.querySelector('input:not([type=hidden]):not([disabled])');
-                    if (active) active.blur();
-                }, 50);
             };
         })();
 
