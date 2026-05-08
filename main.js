@@ -8,6 +8,7 @@
  * - Secure preload bridge
  * - Native PDF printing
  * - Professional window management
+ * - Anti-flicker: GPU flags + ready-to-show
  */
 
 const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
@@ -15,6 +16,11 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const license = require('./license');
+
+// ══════ ANTI-FLICKER: Disable GPU compositing issues on older hardware ══════
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('disable-gpu-compositing');
+app.commandLine.appendSwitch('disable-software-rasterizer');
 
 let mainWindow = null;
 
@@ -32,18 +38,23 @@ function createWindow() {
         autoHideMenuBar: true,
         icon: path.join(__dirname, 'icon.png'),
         title: 'Sistema de Recibos v5.0 Supreme',
-        show: false, // Show after ready
-        backgroundColor: '#0a0f1e'
+        show: false,              // Don't show until content is ready
+        backgroundColor: '#0a0f1e', // Match the dark sidebar background
+        paintWhenInitiallyHidden: true // Pre-render content before showing
     });
-
-    // Maximize on start
-    mainWindow.maximize();
-    mainWindow.show();
-
-    mainWindow.loadFile('SistemaRecibos.html');
 
     // Remove menu completely
     mainWindow.setMenu(null);
+
+    // ANTI-FLICKER: Only show window AFTER content has fully rendered
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.maximize();
+        mainWindow.show();
+        mainWindow.focus();
+    });
+
+    // Load the app AFTER setting up the ready-to-show handler
+    mainWindow.loadFile('SistemaRecibos.html');
 }
 
 // ══════ LICENSE IPC HANDLERS ══════
@@ -106,9 +117,7 @@ app.whenReady().then(() => {
     const licenseInfo = license.getLicenseInfo();
     
     if (!licenseInfo.valid && licenseInfo.reason !== 'NO_LICENSE') {
-        // License expired or invalid machine
         createWindow();
-        // The frontend will handle showing the expired modal
         console.log('[License] Status:', licenseInfo.reason, '- Days remaining:', licenseInfo.daysRemaining);
     } else {
         createWindow();

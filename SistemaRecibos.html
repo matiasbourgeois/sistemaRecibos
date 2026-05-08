@@ -440,6 +440,10 @@
                                     class="w-7 h-7 rounded-lg sb-icon transition flex items-center justify-center border hover:!text-rose-400" title="Eliminar">
                                     <i class="fa-solid fa-trash-can text-[10px]"></i>
                                 </button>
+                                <button @click.stop="clearCurrentEmployee"
+                                    class="w-7 h-7 rounded-lg sb-icon transition flex items-center justify-center border hover:!text-amber-400" title="Limpiar / Nuevo recibo">
+                                    <i class="fa-solid fa-eraser text-[10px]"></i>
+                                </button>
                                 <i class="fa-solid fa-chevron-down text-[8px] transition-transform duration-200 ml-1 sb-txt3"
                                     :class="employeeExpanded ? 'rotate-180' : ''"></i>
                             </div>
@@ -1985,45 +1989,52 @@
 
                 const deleteEmployee = () => {
                     const f = newEmployeeForm.value;
-                    if (!confirm(`¿Estás seguro de que querés eliminar a ${f.nombre}? Esta acción no se puede deshacer.`)) return;
+                    if (!confirm(`¿Estás seguro de que querés eliminar a ${f.nombre}? Esta acción no se puede deshacer.`)) {
+                        setTimeout(() => { document.body.focus(); }, 100);
+                        return;
+                    }
 
                     employeesList.value = employeesList.value.filter(e => e.id !== f.id);
 
-                    // Anti-Ghost: Reset if deleted employee was active
+                    // If deleted employee was the active one, clear everything
                     if (employee.value.id === f.id) {
-                        // Find other employees in this company
-                        const remaining = employeesList.value.filter(e => e.companyId === selectedCompanyId.value);
-                        if (remaining.length > 0) {
-                            employee.value = { ...remaining[0] };
-                        } else {
-                            // No employees left
-                            employee.value = { id: null, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: '', categoria: '' };
-                        }
+                        clearCurrentEmployee();
                     }
 
                     saveGlobalData();
                     showNewEmployeeModal.value = false;
                     addToast('Empleado eliminado correctamente', 'success');
+                    setTimeout(() => { document.body.focus(); }, 100);
                 };
 
                 const deleteSelectedEmployee = () => {
                     const emp = employee.value;
                     if (!emp.id) return;
 
-                    if (!confirm(`¿Estás seguro de que querés eliminar a ${emp.nombre}? Esta acción no se puede deshacer.`)) return;
+                    if (!confirm(`¿Estás seguro de que querés eliminar a ${emp.nombre}? Esta acción no se puede deshacer.`)) {
+                        // Fix Electron focus freeze after confirm() dialog
+                        setTimeout(() => { document.body.focus(); }, 100);
+                        return;
+                    }
 
                     employeesList.value = employeesList.value.filter(e => e.id !== emp.id);
 
-                    // Anti-Ghost: Pick another employee
-                    const remaining = employeesList.value.filter(e => e.companyId === selectedCompanyId.value);
-                    if (remaining.length > 0) {
-                        employee.value = { ...remaining[0] };
-                    } else {
-                        employee.value = { id: null, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: '', categoria: '' };
-                    }
+                    // Reset to empty state (don't auto-select another employee)
+                    clearCurrentEmployee();
 
                     saveGlobalData();
                     addToast('Empleado eliminado correctamente', 'success');
+
+                    // Fix Electron focus freeze after confirm() dialog
+                    setTimeout(() => { document.body.focus(); }, 100);
+                };
+
+                // Reset: Clear current employee and receipt data
+                const clearCurrentEmployee = () => {
+                    employee.value = { id: null, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: '', categoria: '', companyId: null };
+                    receipt.value = { fechaPago: '' };
+                    concepts.value = [];
+                    employeeExpanded.value = false;
                 };
 
                 const filteredEmployees = computed(() => {
@@ -2616,36 +2627,11 @@
                         } catch (e) { }
                     }
 
-                    // MIGRATION CHECK: Si no hay empresas, estamos en primer load v2
+                    // FIRST RUN: Si no hay empresas, es la primera vez
                     if (companiesList.value.length === 0) {
-                        console.log('Migrando a v2...');
-                        // Crear empresa default con datos legacy
-                        const defId = 'comp_default';
-                        companiesList.value = [{
-                            id: defId,
-                            razonSocial: 'SOL DEL AMANECER S.R.L.',
-                            cuit: '30-71096574-5',
-                            domicilio: 'CAMINO 60 CUADRAS KM 5 1/2',
-                            lugarPago: 'CORDOBA'
-                        }];
-                        selectedCompanyId.value = defId;
-
-                        // Migrar empleados hardcodeados legacy
-                        const employeesDB_Legacy = [
-                            { nombre: 'ORTIZ DARIO ADRIAN', cuil: '20-21376999-6', legajo: '822.06', ingreso: '17/10/2012', categoria: 'AUXILIAR OPERATIVO' },
-                            { nombre: 'CANDELLERO VELOZO YOHANA', cuil: '27-35576499-6', legajo: '822.22', ingreso: '10/09/2015', categoria: 'ADMINISTRATIVO' },
-                            { nombre: 'PEREZ WILLY', cuil: '20-XXXXXXXX-X', legajo: '824.05', ingreso: '05/05/2018', categoria: 'CHOFER 1RA' },
-                            { nombre: 'LOPEZ ZARATE', cuil: '20-XXXXXXXX-X', legajo: '825.02', ingreso: '10/02/2020', categoria: 'PEON' }
-                        ];
-
-                        employeesList.value = employeesDB_Legacy.map((e, idx) => ({
-                            ...e,
-                            id: 'emp_legacy_' + idx,
-                            companyId: defId,
-                            antiguedad: 0 // Default
-                        }));
-
-                        saveGlobalData();
+                        console.log('Primera ejecución - sistema limpio');
+                        // No crear datos por defecto - el usuario debe cargar su empresa y empleados
+                        // La UI ya muestra "+ NUEVO EMPLEADO" y el modal de empresas para empezar
                     }
                 });
 
@@ -2710,7 +2696,7 @@
                     isDarkMode, toggleTheme,
                     handleLogoUpload, exportBackup, importBackup, getDynamicFontSize,
                     employeesList, filteredEmployees, loadEmployee, updateCurrentEmployee, employee,
-                    showNewEmployeeModal, newEmployeeForm, openNewEmployeeModal, closeNewEmployeeModal, saveEmployeeForm, isEditingEmployee, openEditEmployeeModal, deleteEmployee, deleteSelectedEmployee, headerSubtitle, employeeExpanded,
+                    showNewEmployeeModal, newEmployeeForm, openNewEmployeeModal, closeNewEmployeeModal, saveEmployeeForm, isEditingEmployee, openEditEmployeeModal, deleteEmployee, deleteSelectedEmployee, clearCurrentEmployee, headerSubtitle, employeeExpanded,
                     employeeSearch, showEmployeeList, employeeSearchResults, selectEmployeeSearch, searchContainer,
                     receipt, concepts, processedConcepts, totalRemunerativo, totalNoRemunerativo, totalHaberes, totalDeducciones, netoPercibir,
                     autoCalculateDeductions, addConceptSemiblank, removeConcept, printReceipt, formatCurrency, formatCurrencyPlain, formatNumber, numeroALetras,
