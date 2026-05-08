@@ -1,0 +1,11 @@
+# Installers
+*.exe
+
+# Extracted source (forensic artifacts)
+_extracted/
+
+# Restoration check (temporary)
+restoration_check.html
+
+# Node
+node_modules/

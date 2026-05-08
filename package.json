@@ -1,0 +1,8 @@
+{
+  "name": "sistemarecibos",
+  "version": "1.0.0",
+  "main": "main.js",
+  "author": "Matias Bourgeois",
+  "license": "ISC",
+  "description": "Sistema de Recibos Premium"
+}

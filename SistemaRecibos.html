@@ -1,0 +1,2672 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Recibos - Multi Empresa</title>
+    <!-- Tailwind CSS (LOCAL) -->
+    <script src="libs/tailwindcss.js"></script>
+    <!-- Vue 3 (LOCAL) -->
+    <script src="libs/vue.global.prod.js"></script>
+    <!-- Google Fonts: Inter & Roboto Mono (LOCAL) -->
+    <style>
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 100 900;
+            font-display: swap;
+            src: url('libs/fonts/inter-latin.woff2') format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+        @font-face {
+            font-family: 'Roboto Mono';
+            font-style: normal;
+            font-weight: 100 700;
+            font-display: swap;
+            src: url('libs/fonts/roboto-mono-latin.woff2') format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+    </style>
+    <!-- FontAwesome (LOCAL) -->
+    <link rel="stylesheet" href="libs/fontawesome/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Roboto Mono', 'monospace'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                        }
+                    },
+                    gridTemplateColumns: {
+                        '12': 'repeat(12, minmax(0, 1fr))',
+                        '24': 'repeat(24, minmax(0, 1fr))',
+                    },
+                    gridColumn: {
+                        'span-9': 'span 9 / span 9',
+                        'span-3': 'span 3 / span 3',
+                        'span-4': 'span 4 / span 4',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f3f4f6;
+        }
+
+        .print-container {
+            width: 297mm;
+            height: 210mm;
+            background: white;
+            margin: 0 auto;
+            /* Fix: Only center horizontally */
+            display: flex;
+            transform-origin: top center;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
+        }
+
+        @media print {
+            @page {
+                size: landscape;
+                margin: 0;
+            }
+
+            body {
+                background: white !important;
+                -webkit-print-color-adjust: exact;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+
+            #app,
+            div.flex.h-screen {
+                display: block !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            /* Container of the receipt */
+            div.flex-1.bg-slate-700 {
+                background: transparent !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                display: block !important;
+            }
+
+            .print-container {
+                width: 297mm;
+                height: 210mm;
+                margin: 0 !important;
+                padding: 0 !important;
+                transform: none !important;
+                box-shadow: none !important;
+                display: flex !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+            }
+
+            .receipt-half {
+                width: 148.5mm;
+                height: 210mm;
+                padding: 5mm;
+                box-sizing: border-box;
+                border: none !important;
+            }
+
+            .receipt-half:first-child {
+                border-right: 1px dashed #ccc !important;
+            }
+        }
+
+        .receipt-half {
+            width: 148.5mm;
+            height: 210mm;
+            padding: 5mm;
+            /* Reduced from 12mm */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .receipt-border {
+            border: 1px solid #333;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 10px 14px;
+            /* Increasod for air */
+            position: relative;
+        }
+
+        .table-header {
+            background-color: #fcfdfe;
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
+        }
+
+        .font-mono-condensed {
+            font-family: 'Roboto Mono', monospace;
+            letter-spacing: -0.8px;
+        }
+
+        .text-shadow-sm {
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Input invisible para edición en línea */
+        .invisible-input {
+            background: transparent;
+            border: none;
+            width: 100%;
+            outline: none;
+        }
+
+        /* Sidebar Resizable */
+        .sidebar {
+            transition: width 0.05s linear;
+            position: relative;
+            user-select: none;
+        }
+
+        .resizer {
+            width: 5px;
+            cursor: col-resize;
+            background: transparent;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 60;
+            transition: background 0.2s;
+        }
+
+        .resizer:hover,
+        .resizer.resizing {
+            background: #3b82f6;
+            width: 8px;
+        }
+
+        .invisible-input:focus {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Scrollbar custom para sidebar */
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        /* Toast Animation */
+        .toast-enter-active,
+        .toast-leave-active {
+            transition: all 0.4s ease;
+        }
+
+        .toast-enter-from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .toast-leave-to {
+            opacity: 0;
+            transform: translateX(50px);
+        }
+    </style>
+</head>
+
+<body class="text-slate-800">
+    <div id="app">
+        <div class="flex h-screen flex-col md:flex-row overflow-hidden">
+
+            <!-- SIDEBAR DE CONTROLES (No se imprime) -->
+            <div class="sidebar bg-white border-r border-gray-200 flex flex-col h-full no-print z-50 shadow-lg"
+                :style="{ width: sidebarWidth + 'px' }">
+
+                <!-- Resizer Handle -->
+                <div class="resizer" @mousedown="startResizing" :class="{ 'resizing': isResizing }"></div>
+
+                <!-- HEADER SIDEBAR (Mantine Style - Fixed Layout) -->
+                <div
+                    class="px-5 py-4 bg-white border-b border-gray-100 sticky top-0 z-40 bg-opacity-90 backdrop-blur-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h1 class="font-black text-lg text-slate-800 tracking-tight flex items-center gap-2">
+                            <div
+                                class="w-8 h-8 rounded-lg bg-cyan-600 flex items-center justify-center text-white shadow-md shadow-cyan-200">
+                                <i class="fa-solid fa-file-invoice-dollar text-sm"></i>
+                            </div>
+                            <span
+                                class="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">Sistema
+                                de Liquidación de Sueldos</span>
+                        </h1>
+                    </div>
+
+                    <!-- SELECTOR DE EMPRESA MULTI-COMPANY (Mantine Select) -->
+                    <div class="flex gap-2">
+                        <div class="relative group flex-1">
+                            <i class="fa-solid fa-building absolute left-3 top-3 text-gray-400 text-xs"></i>
+                            <select v-model="selectedCompanyId"
+                                class="w-full bg-gray-50 hover:bg-white border border-gray-200 rounded-xl pl-9 pr-8 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-100 focus:border-cyan-400 transition-all appearance-none cursor-pointer">
+                                <option v-for="comp in companiesList" :key="comp.id" :value="comp.id"
+                                    class="text-slate-800 py-1">
+                                    {{ comp.razonSocial }}
+                                </option>
+                            </select>
+                            <i
+                                class="fa-solid fa-chevron-down absolute right-3 top-3 text-gray-400 text-[10px] pointer-events-none group-hover:text-cyan-500 transition-colors"></i>
+                        </div>
+
+                        <!-- Actions (Toolbar Row) -->
+                        <div class="flex gap-2 shrink-0">
+                            <button @click="openCompanyModal"
+                                class="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200 transition bg-white shadow-sm"
+                                title="Gestionar Empresas">
+                                <i class="fa-solid fa-cog text-sm"></i>
+                            </button>
+                            <button @click="openConfigModal"
+                                class="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200 transition bg-white shadow-sm"
+                                title="Configuración">
+                                <i class="fa-solid fa-sliders text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-5 py-6 space-y-8 sidebar-scroll">
+
+                    <!-- SECCION 1: LIQUIDACION -->
+                    <div class="space-y-4">
+                        <h3
+                            class="font-bold text-[10px] text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                            Datos Liquidación
+                        </h3>
+                        <div class="bg-white p-1 space-y-4">
+                            <label class="block">
+                                <span class="text-[11px] font-semibold text-slate-600 mb-1.5 block">Periodo</span>
+                                <div class="flex gap-2">
+                                    <div class="relative flex-1">
+                                        <select v-model="periodMonth"
+                                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 focus:bg-white text-slate-700 font-medium outline-none focus:ring-2 focus:ring-indigo-100 transition-all appearance-none uppercase cursor-pointer">
+                                            <option v-for="m in months" :key="m" :value="m">{{ m }}</option>
+                                        </select>
+                                    </div>
+                                    <input type="text" inputmode="numeric" v-model.number="periodYear"
+                                        @input="$event.target.value = $event.target.value.replace(/[^0-9]/g, '')"
+                                        class="w-24 border border-gray-200 rounded-lg px-2 py-2 text-xs text-center font-bold text-slate-700 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer hover:bg-white"
+                                        placeholder="2025">
+                                </div>
+                            </label>
+                            <label class="block">
+                                <span class="text-[11px] font-semibold text-slate-600 mb-1.5 block">Fecha de Pago</span>
+                                <input type="text" v-model="receipt.fechaPago"
+                                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-medium text-slate-700 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-100 transition-all placeholder-gray-400">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- SECCION 2: EMPLEADO -->
+                    <div class="space-y-4">
+                        <!-- 1. Título -->
+                        <h3 class="font-bold text-xs text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                            Empleado
+                        </h3>
+
+                        <!-- 2. Buscador (Search Bar) -->
+                        <div class="relative group" ref="searchContainer">
+                            <input type="text" v-model="employeeSearch" @focus="showEmployeeList = true"
+                                @keyup.esc="showEmployeeList = false" placeholder="BUSCAR EMPLEADO..."
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-cyan-100 focus:border-cyan-400 outline-none uppercase bg-white shadow-sm transition-all group-hover:border-cyan-300">
+                            <i
+                                class="fa-solid fa-search absolute right-3 top-3 text-gray-300 text-xs pointer-events-none group-hover:text-cyan-500 transition-colors"></i>
+
+                            <div v-if="showEmployeeList"
+                                class="absolute w-full bg-white border border-gray-100 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto mt-2 p-1 custom-scrollbar">
+                                <div v-for="emp in employeeSearchResults" :key="emp.id"
+                                    @click="selectEmployeeSearch(emp)"
+                                    class="px-3 py-2.5 text-[11px] hover:bg-cyan-50 cursor-pointer rounded-lg text-slate-700 flex justify-between items-center transition mb-0.5 last:mb-0 group">
+                                    <span class="font-bold truncate group-hover:text-cyan-700">{{ emp.nombre
+                                        }}</span>
+                                    <span
+                                        class="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-mono border border-gray-200 group-hover:border-cyan-200 group-hover:bg-white group-hover:text-cyan-600">{{
+                                        emp.legajo }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Botones de Acción (God Tier) -->
+                        <div class="flex items-center gap-2">
+                            <button @click="openNewEmployeeModal"
+                                class="flex-1 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-[11px] rounded-2xl shadow-xl shadow-cyan-100 hover:shadow-cyan-200 hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center uppercase tracking-[0.2em] relative overflow-hidden group/add">
+                                <div
+                                    class="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover/add:translate-x-[100%] transition-transform duration-1000">
+                                </div>
+                                <i class="fa-solid fa-plus-circle mr-2 text-lg"></i> NUEVO
+                            </button>
+
+                            <button @click="openEditEmployeeModal"
+                                class="w-14 h-14 bg-white border border-slate-200 text-slate-400 hover:text-cyan-600 hover:border-cyan-100 hover:bg-cyan-50 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center group/edit"
+                                title="Editar datos">
+                                <i
+                                    class="fa-solid fa-pencil text-sm group-hover/edit:rotate-12 transition-transform"></i>
+                            </button>
+
+                            <button @click="deleteSelectedEmployee"
+                                class="w-14 h-14 bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-100 hover:bg-red-50 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center group/delete"
+                                title="Eliminar empleado">
+                                <i
+                                    class="fa-solid fa-trash-can text-sm group-hover/delete:scale-110 transition-transform"></i>
+                            </button>
+                        </div>
+
+                        <!-- 4. Details Card (Solo si hay empleado seleccionado) -->
+                        <div v-if="employee.id"
+                            class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <!-- Overlay de Seguridad (Read Only Hint) -->
+                            <div v-if="!isEditingEmployee" class="absolute inset-0 z-10 bg-slate-50/5 cursor-default"
+                                title="Para editar, use el botón EDITAR (Lápiz)"></div>
+
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-wider">Nombre
+                                    Completo</label>
+                                <div class="relative group">
+                                    <div
+                                        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                    <input type="text" v-model="employee.nombre" readonly
+                                        class="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 focus:outline-none cursor-default shadow-sm tracking-wide"
+                                        placeholder="NOMBRE">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-5">
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-wider">CUIL</label>
+                                    <input type="text" v-model="employee.cuil" readonly
+                                        class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono font-medium text-slate-600 bg-slate-50 focus:outline-none cursor-default shadow-sm"
+                                        placeholder="CUIL">
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-wider">Legajo</label>
+                                    <input type="text" v-model="employee.legajo" readonly
+                                        class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono font-medium text-slate-600 bg-slate-50 focus:outline-none cursor-default shadow-sm"
+                                        placeholder="LEGAJO">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-5">
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-wider">Fecha
+                                        de Ingreso</label>
+                                    <input type="text" v-model="employee.ingreso" readonly
+                                        class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-600 focus:outline-none cursor-default shadow-sm"
+                                        placeholder="F. INGRESO">
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-wider">Antigüedad
+                                        (Años)</label>
+                                    <input type="text" v-model="employee.antiguedad" readonly
+                                        class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-600 focus:outline-none cursor-default shadow-sm"
+                                        placeholder="ANTIGÜEDAD">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-wider">Categoría</label>
+                                <input type="text" v-model="employee.categoria" readonly
+                                    class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm uppercase font-bold text-slate-600 bg-slate-50 focus:outline-none cursor-default shadow-sm"
+                                    placeholder="CATEGORÍA">
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+                    <!-- SECCION 4: CONCEPTOS / ITEMS -->
+                    <div class="space-y-4">
+                        <h3
+                            class="font-bold text-[10px] text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                            Conceptos del Recibo
+                        </h3>
+                        <!-- BOTÓN ACCESO BIBLIOTECA -->
+                        <button @click="openConceptLibraryModal"
+                            class="w-full py-3 bg-indigo-50 border-2 border-indigo-100 text-indigo-600 font-black text-[10px] rounded-xl hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center uppercase tracking-widest shadow-sm">
+                            <i class="fa-solid fa-book-open mr-2"></i> Biblioteca de Conceptos
+                        </button>
+
+                        <!-- BUSCADOR DE BIBLIOTECA -->
+                        <div class="relative group mt-2">
+                            <div class="relative">
+                                <i
+                                    class="fa-solid fa-search absolute left-4 top-3 text-slate-300 group-focus-within:text-indigo-500 transition-colors text-[10px]"></i>
+                                <input type="text" v-model="librarySearchQuery"
+                                    class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700 text-[10px] shadow-sm uppercase"
+                                    placeholder="BUSCAR EN BIBLIOTECA...">
+                            </div>
+
+                            <!-- Dropdown de resultados -->
+                            <transition name="toast">
+                                <div v-if="filteredLibraryConcepts.length > 0"
+                                    class="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 z-[60] py-2 max-h-[300px] overflow-y-auto">
+                                    <button v-for="lib in filteredLibraryConcepts" :key="lib.id"
+                                        @click="selectLibraryConcept(lib)"
+                                        class="w-full px-4 py-2 hover:bg-indigo-50 flex items-center justify-between transition-colors border-b border-slate-50 last:border-0">
+                                        <div class="text-left">
+                                            <div class="text-[10px] font-black text-slate-700 uppercase">{{
+                                                lib.description }}</div>
+                                            <div class="text-[8px] font-bold text-indigo-500">COD: #{{ lib.code }}</div>
+                                        </div>
+                                        <div class="flex flex-col items-end">
+                                            <div class="text-[9px] font-black text-slate-400">{{
+                                                formatCurrency(lib.defaultPrice) }}</div>
+                                            <div class="text-[7px] font-black px-1.5 py-0.5 rounded"
+                                                :class="lib.type === 'REM' ? 'bg-green-100 text-green-600' : (lib.type === 'DED' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600')">
+                                                {{ lib.type }}
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </transition>
+                        </div>
+
+                        <div class="bg-white space-y-2 mt-4">
+                            <div v-for="(item, index) in concepts" :key="index"
+                                class="flex items-center space-x-2 p-1 group hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition-all">
+
+                                <div class="w-16">
+                                    <input type="text" inputmode="decimal" v-model.number="item.cantidad"
+                                        @input="$event.target.value = $event.target.value.replace(/[^0-9.]/g, '')"
+                                        class="w-full text-xs border border-gray-200 rounded-lg px-2 py-2 font-mono text-center bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all placeholder-gray-300"
+                                        placeholder="0">
+                                </div>
+
+                                <div class="flex-1">
+                                    <input type="text" v-model="item.descripcion"
+                                        class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 font-bold uppercase focus:ring-2 focus:ring-blue-400 outline-none transition-all placeholder-gray-300 focus:bg-white bg-transparent"
+                                        placeholder="DESCRIPCIÓN">
+                                </div>
+
+                                <div class="w-28">
+                                    <select v-model="item.tipo"
+                                        class="w-full text-[10px] border border-gray-200 rounded-lg px-2 py-2 bg-gray-50 font-bold outline-none cursor-pointer text-slate-600 focus:ring-2 focus:ring-blue-400">
+                                        <option value="REM">REMUNERAT.</option>
+                                        <option value="NO_REM">NO REMUN.</option>
+                                        <option value="DED">DEDUCCIÓN</option>
+                                    </select>
+                                </div>
+
+                                <div class="w-28">
+                                    <div class="relative">
+                                        <span class="absolute left-2 top-2 text-[10px] text-gray-400">$</span>
+                                        <input type="text" inputmode="decimal" v-model.number="item.valorUnitario"
+                                            @input="$event.target.value = $event.target.value.replace(/[^0-9.]/g, '')"
+                                            class="w-full text-xs border border-gray-200 rounded-lg pl-4 pr-3 py-2 text-right font-mono font-bold bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all placeholder-gray-300 shadow-sm"
+                                            placeholder="0.00">
+                                    </div>
+                                </div>
+
+                                <button @click="removeConcept(index)"
+                                    class="text-red-300 hover:text-red-500 w-6 h-6 flex items-center justify-center rounded hover:bg-red-50 opacity-0 group-hover:opacity-100 transition">
+                                    <i class="fa-solid fa-trash-can text-[10px]"></i>
+                                </button>
+                            </div>
+
+                            <div class="flex gap-2 mt-4 px-1">
+                                <button @click="addConceptSemiblank('REM')"
+                                    class="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-black text-[9px] rounded-xl hover:bg-green-50 hover:border-green-200 hover:text-green-600 active:scale-95 transition-all flex items-center justify-center uppercase tracking-widest shadow-sm">
+                                    <i class="fa-solid fa-plus-circle mr-1.5 text-green-500"></i> Rem
+                                </button>
+                                <button @click="addConceptSemiblank('NO_REM')"
+                                    class="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-black text-[9px] rounded-xl hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 active:scale-95 transition-all flex items-center justify-center uppercase tracking-widest shadow-sm">
+                                    <i class="fa-solid fa-plus-circle mr-1.5 text-blue-500"></i> No Rem
+                                </button>
+                                <button @click="addConceptSemiblank('DED')"
+                                    class="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-black text-[9px] rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-600 active:scale-95 transition-all flex items-center justify-center uppercase tracking-widest shadow-sm">
+                                    <i class="fa-solid fa-minus-circle mr-1.5 text-red-500"></i> Ded
+                                </button>
+                            </div>
+
+                            <!-- BOTONES DE ACCIÓN UNIFICADOS (Dark Aesthetic) -->
+                            <div class="space-y-3 mt-4">
+                                <!-- Calcular: Dark & Premium -->
+                                <!-- Calcular: Level God Tier -->
+                                <button @click="autoCalculateDeductions"
+                                    class="w-full bg-slate-900 lg:hover:bg-slate-800 text-white py-4 rounded-2xl text-[11px] font-black shadow-xl shadow-slate-200 lg:hover:shadow-slate-300 lg:hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center uppercase tracking-[0.15em] border border-slate-700 relative overflow-hidden group">
+                                    <div
+                                        class="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/10 to-cyan-500/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700">
+                                    </div>
+                                    <i
+                                        class="fa-solid fa-wand-magic-sparkles mr-3 text-cyan-400 group-hover:rotate-12 transition-transform"></i>
+                                    Calcular Deducciones
+                                </button>
+
+                                <!-- ACCIONES PRINCIPALES (Level God Layout) -->
+                                <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+                                    <!-- Guardar: Primary Action -->
+                                    <button @click="saveReceipt"
+                                        class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-2xl text-[11px] font-black shadow-lg shadow-slate-200 hover:shadow-slate-300 hover:-translate-y-0.5 active:scale-95 transition-all flex flex-col items-center justify-center uppercase tracking-widest relative overflow-hidden group">
+                                        <div
+                                            class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                                        </div>
+                                        <i class="fa-solid fa-floppy-disk mb-1 text-emerald-400 text-sm"></i>
+                                        <span>Guardar Recibo</span>
+                                    </button>
+
+                                    <!-- Historial: Contextual Action -->
+                                    <button @click="openHistoryModal"
+                                        class="bg-slate-50 hover:bg-slate-100 text-slate-700 py-3.5 rounded-2xl text-[11px] font-black border border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all flex flex-col items-center justify-center uppercase tracking-widest group">
+                                        <i
+                                            class="fa-solid fa-clock-rotate-left mb-1 text-sm text-slate-400 group-hover:text-cyan-600 transition-colors"></i>
+                                        <span>Historial de Recibos</span>
+                                    </button>
+
+                                    <!-- Imprimir: High Visibility (Moved here) -->
+                                    <button @click="printReceipt"
+                                        class="col-span-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white py-4 rounded-2xl text-xs font-black shadow-xl shadow-cyan-200 hover:shadow-cyan-300 hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center uppercase tracking-[0.2em] group relative overflow-hidden">
+                                        <div
+                                            class="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000">
+                                        </div>
+                                        <i class="fa-solid fa-print mr-3 text-lg animate-pulse"></i>
+                                        IMPRIMIR RECIBO
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TOTALES CARD (Level God Redesign) -->
+                    <div
+                        class="bg-slate-900 rounded-[2.5rem] p-7 shadow-2xl shadow-slate-900/40 relative overflow-hidden group border border-white/5 ring-1 ring-white/10 transition-all duration-500 hover:scale-[1.02] hover:shadow-cyan-500/20">
+
+                        <!-- Ultra-Premium Gradient Glows -->
+                        <div
+                            class="absolute -top-20 -right-20 w-64 h-64 bg-cyan-500/30 rounded-full blur-[80px] mix-blend-screen animate-pulse pointer-events-none">
+                        </div>
+                        <div
+                            class="absolute -bottom-20 -left-20 w-64 h-64 bg-blue-600/20 rounded-full blur-[80px] mix-blend-screen pointer-events-none">
+                        </div>
+
+                        <!-- Premium Glass Texture Overlay -->
+                        <div class="absolute inset-0 opacity-[0.05] pointer-events-none"
+                            style="background-image: radial-gradient(#fff 0.5px, transparent 0.5px); background-size: 24px 24px;">
+                        </div>
+
+                        <div class="relative z-10">
+                            <!-- Header -->
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="space-y-1">
+                                    <span
+                                        class="inline-block px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-[9px] font-black text-cyan-400 uppercase tracking-widest">
+                                        Liquidación Final
+                                    </span>
+                                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.25em] pl-1">NETO
+                                        A PERCIBIR</h3>
+                                </div>
+                                <div
+                                    class="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl flex items-center justify-center text-cyan-400 shadow-2xl border border-white/10 group-hover:rotate-12 transition-transform duration-500">
+                                    <i class="fa-solid fa-money-bill-transfer text-xl"></i>
+                                </div>
+                            </div>
+
+                            <!-- Amount Display -->
+                            <div
+                                class="relative py-4 px-2 bg-white/5 rounded-3xl border border-white/5 active:scale-95 transition-transform cursor-pointer overflow-hidden group/amount text-center">
+                                <div
+                                    class="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent -translate-x-full group-hover/amount:translate-x-full transition-transform duration-1000">
+                                </div>
+                                <div class="flex items-baseline justify-center gap-2 relative">
+                                    <span
+                                        class="text-2xl font-black text-cyan-500 drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]">$</span>
+                                    <span
+                                        class="text-5xl font-black text-white tracking-tighter font-mono tabular-nums leading-none">
+                                        {{ formatCurrencyPlain(netoPercibir) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Highlights Grid -->
+                            <div class="grid grid-cols-2 gap-3 mt-6">
+                                <div class="bg-white/5 rounded-2xl p-3 border border-white/5 backdrop-blur-md">
+                                    <div class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                                        Total Haberes</div>
+                                    <div class="text-sm font-black text-slate-200 font-mono">{{
+                                        formatCurrencyPlain(totalHaberes || (totalRemunerativo + totalNoRemunerativo))
+                                        }}</div>
+                                </div>
+                                <div class="bg-white/5 rounded-2xl p-3 border border-white/5 backdrop-blur-md">
+                                    <div
+                                        class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1 text-right">
+                                        Descuentos</div>
+                                    <div class="text-sm font-black text-red-400/90 font-mono text-right">-{{
+                                        formatCurrencyPlain(totalDeducciones) }}</div>
+                                </div>
+                            </div>
+
+                            <!-- Footer -->
+                            <div
+                                class="mt-6 pt-4 border-t border-white/5 flex justify-between items-center text-slate-500">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-check text-emerald-500/80 text-[10px]"></i>
+                                    <span class="text-[10px] font-bold uppercase tracking-widest">Verificado</span>
+                                </div>
+                                <span class="text-[9px] font-mono tracking-tighter opacity-50">{{ new
+                                    Date().toLocaleDateString() }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECCION: SEGURIDAD -->
+                    <div class="space-y-3 pt-4 border-t border-gray-100">
+                        <h3
+                            class="font-bold text-[10px] text-slate-400 uppercase tracking-[2px] pb-1 flex items-center">
+                            <i class="fa-solid fa-shield-halved mr-2"></i> Seguridad y Datos
+                        </h3>
+                        <div class="grid grid-cols-2 gap-3 mt-4">
+                            <button @click="exportBackup"
+                                class="py-3 bg-white border border-slate-200 text-slate-500 hover:text-cyan-600 hover:border-cyan-100 hover:bg-cyan-50 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center font-black text-[9px] uppercase tracking-widest group/backup">
+                                <i
+                                    class="fa-solid fa-download mr-2 text-cyan-400 group-hover/backup:translate-y-0.5 transition-transform"></i>
+                                BACKUP
+                            </button>
+
+                            <label
+                                class="py-3 bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center font-black text-[9px] uppercase tracking-widest group/restore cursor-pointer">
+                                <i
+                                    class="fa-solid fa-upload mr-2 text-indigo-400 group-hover/restore:-translate-y-0.5 transition-transform"></i>
+                                RESTAURAR
+                                <input type="file" @change="importBackup" class="hidden" accept=".json">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="p-3 border-t text-[9px] text-center text-gray-400 bg-gray-50 flex items-center justify-center space-x-2">
+                    <span class="bg-gray-200 px-2 py-0.5 rounded-full font-bold">v3.0</span>
+                    <span class="font-medium">GOD TIER EDITION</span>
+                </div>
+            </div>
+
+            <!-- AREA DE VISTA PREVIA (MAIN) -->
+            <div class="flex-1 bg-slate-700 overflow-y-auto relative flex flex-col items-center justify-start py-8 custom-scrollbar"
+                ref="previewContainer">
+                <!-- Zoom Controls (Optional bonus) -->
+                <div class="fixed bottom-4 right-4 flex gap-2 z-50 opacity-50 hover:opacity-100 transition-opacity">
+                    <button @click="adjustScale(-0.1)"
+                        class="bg-gray-800 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg hover:bg-black">-</button>
+                    <span class="bg-gray-800 text-white px-2 rounded-lg flex items-center text-xs h-8">{{
+                        Math.round(receiptScale * 100) }}%</span>
+                    <button @click="adjustScale(0.1)"
+                        class="bg-gray-800 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg hover:bg-black">+</button>
+                </div>
+
+                <!-- Fix: Force transform-origin in inline style and remove margin auto logic from class via overriding if needed, but margin: 0 auto is good for horizontal centering -->
+                <div class="print-container text-black font-sans leading-tight shadow-2xl transition-transform duration-200"
+                    :style="{ transform: `scale(${receiptScale})`, transformOrigin: 'top center', marginBottom: `-${(1 - receiptScale) * 1123}px` }">
+
+                    <!-- TEMPLATE PARA AMBOS LADOS -->
+                    <template v-for="type in ['DUPLICADO', 'ORIGINAL']">
+                        <div class="receipt-half"
+                            :class="type === 'DUPLICADO' ? 'border-r-2 border-dashed border-gray-300' : ''">
+                            <div class="receipt-border">
+                                <!-- HEADER -->
+                                <div class="flex justify-between items-start mb-1.5 shrink-0">
+                                    <div class="flex items-center space-x-3 max-w-[75%] overflow-hidden">
+                                        <img v-if="company.logo" :src="company.logo" class="h-12 w-auto object-contain">
+                                        <div class="truncate">
+                                            <h1 class="font-bold text-2xl uppercase tracking-tighter leading-tight truncate"
+                                                :style="{ fontSize: getDynamicFontSize(company.razonSocial, 24, 14) + 'px' }">
+                                                {{ company.razonSocial }}
+                                            </h1>
+                                            <p class="text-[8px] font-semibold text-gray-500 mt-0">Domicilio: {{
+                                                company.domicilio }} - Localidad: {{ company.lugarPago }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right flex flex-col items-end shrink-0">
+                                        <div
+                                            class="border border-black px-3 py-1 font-bold text-base mb-0.5 leading-none">
+                                            {{ type }}</div>
+                                        <p class="text-[7px] font-medium text-gray-500 uppercase tracking-wider">{{
+                                            type === 'DUPLICADO' ? '(Para el Empleado)' : '(Para el Empleador)' }}</p>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-black pt-1 mb-1.5 shrink-0">
+                                    <h2 class="text-center font-bold text-lg uppercase tracking-[0.25em] mb-1">
+                                        Recibo de Haberes</h2>
+                                    <div
+                                        class="grid grid-cols-12 gap-2 text-[9px] font-medium border-y border-gray-300 py-1.5 px-2 items-center">
+                                        <div class="col-span-3">CUIT: <span class="font-bold">{{ company.cuit }}</span>
+                                        </div>
+                                        <div class="col-span-6 text-center whitespace-nowrap">PERIODO: <span
+                                                class="text-xs font-bold uppercase">{{
+                                                receipt.periodo }}</span></div>
+                                        <div class="col-span-3 text-right">FECHA PAGO: <span class="font-bold">{{
+                                                receipt.fechaPago
+                                                }}</span></div>
+                                    </div>
+                                </div>
+
+                                <!-- DATOS EMPLEADO -->
+                                <div class="mb-2 shrink-0">
+                                    <div class="grid grid-cols-12 gap-y-1.5 text-[9px] items-start px-1">
+                                        <div class="col-span-8">
+                                            <span
+                                                class="text-gray-500 font-medium uppercase text-[7px] tracking-widest">Apellido
+                                                y Nombre del Empleado:</span><br>
+                                            <div class="mt-0.5">
+                                                <span class="text-sm font-bold uppercase leading-none">{{
+                                                    employee.nombre
+                                                    }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-span-4 text-right">
+                                            <span
+                                                class="text-gray-500 font-medium uppercase text-[7px] tracking-widest">Legajo
+                                                N°:</span><br>
+                                            <div class="mt-0.5">
+                                                <span class="text-sm font-bold leading-none">{{ employee.legajo || '---'
+                                                    }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-span-12 h-px bg-gray-100 my-0.5"></div>
+                                        <div class="col-span-3 border-r border-gray-100">
+                                            <span
+                                                class="text-gray-500 font-medium uppercase text-[7px] tracking-widest">C.U.I.L.:</span><br>
+                                            <div class="mt-0.5">
+                                                <span class="text-[10px] font-bold">{{ employee.cuil }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-span-3 border-r border-gray-100 text-center">
+                                            <span
+                                                class="text-gray-500 font-medium uppercase text-[7px] tracking-widest">Fecha
+                                                Ingreso:</span><br>
+                                            <div class="mt-0.5">
+                                                <span class="text-[10px] font-bold">{{ employee.ingreso }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-span-3 border-r border-gray-100 text-center">
+                                            <span
+                                                class="text-gray-500 font-medium uppercase text-[7px] tracking-widest">Antigüedad:</span><br>
+                                            <div class="mt-0.5">
+                                                <span class="text-[10px] font-bold">{{ employee.antiguedad }}
+                                                    años</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-span-3 text-right">
+                                            <span
+                                                class="text-gray-500 font-medium uppercase text-[7px] tracking-widest">Categoría
+                                                / Tarea:</span><br>
+                                            <div class="mt-0.5">
+                                                <span class="text-[10px] font-bold uppercase">{{ employee.categoria
+                                                    }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex-1 flex flex-col border border-black overflow-hidden bg-white">
+                                    <div
+                                        class="grid grid-cols-24 gap-0 text-[9px] font-medium uppercase table-header p-1 border-b border-black">
+                                        <div class="col-span-3 text-center border-r border-gray-300">Cant</div>
+                                        <div class="col-span-9 px-3 border-r border-gray-300">Concepto</div>
+                                        <div
+                                            class="col-span-4 text-right px-2 border-r border-gray-300 whitespace-nowrap">
+                                            Valor Unit.</div>
+                                        <div class="col-span-4 text-right px-2 border-r border-gray-300 text-gray-700">
+                                            Haberes</div>
+                                        <div class="col-span-4 text-right px-2 text-gray-700">Deducciones</div>
+                                    </div>
+
+                                    <div class="flex-1 px-0 py-0 overflow-hidden relative">
+                                        <div v-for="(item, index) in processedConcepts" :key="index"
+                                            class="grid grid-cols-24 gap-0 text-[10px] items-center border-b border-gray-100 last:border-0 h-[17px]">
+                                            <div
+                                                class="col-span-3 text-center font-mono-condensed font-medium text-gray-400 border-r border-gray-100 h-full flex items-center justify-center px-1">
+                                                {{ item.cantidad > 0 ? formatNumber(item.cantidad) : '' }}</div>
+                                            <div
+                                                class="col-span-9 px-3 uppercase font-semibold text-[9px] truncate border-r border-gray-100 h-full flex items-center">
+                                                {{ item.descripcion }}</div>
+                                            <div
+                                                class="col-span-4 text-right font-mono-condensed font-medium px-2 border-r border-gray-100 h-full flex items-center justify-end">
+                                                {{ item.valorUnitario > 0 ? formatNumber(item.valorUnitario) : '' }}
+                                            </div>
+                                            <div
+                                                class="col-span-4 text-right font-mono-condensed font-bold px-2 text-slate-700 border-r border-gray-100 h-full flex items-center justify-end">
+                                                {{ (item.tipo === 'REM' || item.tipo === 'NO_REM') ?
+                                                formatCurrencyPlain(item.total) : '' }}
+                                            </div>
+                                            <div
+                                                class="col-span-4 text-right font-mono-condensed font-bold px-2 text-slate-700 h-full flex items-center justify-end">
+                                                {{ item.tipo === 'DED' ? formatCurrencyPlain(item.total) : '' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- TOTALES -->
+                                    <div class="border-t border-black">
+                                        <div
+                                            class="grid grid-cols-12 gap-0 text-[7px] font-medium uppercase text-center border-b border-gray-200">
+                                            <div
+                                                class="col-span-3 px-1 py-1 border-r border-gray-200 truncate text-gray-500">
+                                                Total
+                                                Bruto</div>
+                                            <div
+                                                class="col-span-3 px-1 py-1 border-r border-gray-200 truncate text-gray-500">
+                                                No
+                                                Remunerat.</div>
+                                            <div
+                                                class="col-span-2 px-1 py-1 border-r border-gray-200 truncate text-gray-500">
+                                                Retenciones</div>
+                                            <div class="col-span-4 px-1 py-1 border-l border-black font-bold truncate">
+                                                Neto a Cobrar
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-12 gap-0 font-mono-condensed text-center font-bold">
+                                            <div class="col-span-3 px-1 py-2 border-r border-gray-200 text-[10px]">{{
+                                                formatCurrencyPlain(totalRemunerativo) }}</div>
+                                            <div class="col-span-3 px-1 py-2 border-r border-gray-200 text-[10px]">{{
+                                                formatCurrencyPlain(totalNoRemunerativo) }}</div>
+                                            <div class="col-span-2 px-1 py-2 border-r border-gray-200 text-[10px]">{{
+                                                formatCurrencyPlain(totalDeducciones) }}</div>
+                                            <div class="col-span-4 px-4 py-1 flex items-center justify-center font-black border-l border-black overflow-hidden"
+                                                :style="{ fontSize: getDynamicFontSize(formatCurrencyPlain(netoPercibir), 22, 10, 11) + 'px' }">
+                                                {{ formatCurrencyPlain(netoPercibir) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- SON LETRAS -->
+                                <div
+                                    class="mt-1.5 text-[8.5px] font-medium italic border-b border-gray-300 pb-0.5 shrink-0 uppercase">
+                                    SON PESOS: <span class="font-bold">{{ numeroALetras(netoPercibir) }}</span>
+                                </div>
+
+                                <div class="mt-0.5 text-[7.5px] font-semibold text-gray-500 italic shrink-0">
+                                    "Recibí el importe de la presente liquidación y el duplicado de la misma"
+                                </div>
+
+                                <!-- FIRMAS -->
+                                <div class="mt-12 flex justify-center px-6 pb-2 shrink-0">
+                                    <div v-if="type === 'DUPLICADO'" class="w-7/12 text-center">
+                                        <div class="border-t border-black pt-1.5">
+                                            <span class="text-[9px] font-bold uppercase text-gray-700">Firma del
+                                                Empleador</span>
+                                        </div>
+                                    </div>
+                                    <div v-if="type === 'ORIGINAL'" class="w-7/12 text-center">
+                                        <div class="border-t border-black pt-1.5">
+                                            <span class="text-[9px] font-bold uppercase text-gray-700">Firma del
+                                                Empleado</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL GESTION EMPRESAS (GOD TIER) -->
+        <transition name="toast">
+            <div v-if="showCompanyModal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+                <!-- Backdrop -->
+                <div @click="closeCompanyModal"
+                    class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"></div>
+
+                <!-- Modal Card -->
+                <div
+                    class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100">
+                    <div class="bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center">
+                        <div>
+                            <h2
+                                class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                                <i class="fa-solid fa-building text-cyan-500"></i> Empresas
+                            </h2>
+                            <p class="text-slate-400 text-xs font-medium">Gestioná tus entidades comerciales</p>
+                        </div>
+                        <button @click="closeCompanyModal"
+                            class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                        <!-- LISTA -->
+                        <div class="space-y-3 mb-6">
+                            <div v-for="comp in companiesList" :key="comp.id"
+                                class="flex justify-between items-center p-4 bg-slate-50 hover:bg-white rounded-2xl border border-slate-100 hover:border-cyan-200 transition-all group shadow-sm">
+                                <div>
+                                    <h3
+                                        class="font-bold text-sm text-slate-700 group-hover:text-cyan-600 transition-colors">
+                                        {{ comp.razonSocial }}</h3>
+                                    <p class="text-[10px] text-slate-400 font-medium tracking-wide">CUIT: {{ comp.cuit
+                                        }}</p>
+                                </div>
+                                <div class="flex space-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                    <button @click="editCompany(comp)"
+                                        class="w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition"><i
+                                            class="fa-solid fa-pen text-xs"></i></button>
+                                    <button v-if="companiesList.length > 1" @click="deleteCompany(comp.id)"
+                                        class="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition"><i
+                                            class="fa-solid fa-trash text-xs"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FORMULARIO -->
+                        <div class="bg-cyan-50/50 p-6 rounded-3xl border border-cyan-100/50">
+                            <h3
+                                class="font-bold text-xs text-cyan-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+                                {{ isEditingCompany ? 'Editar Empresa' : 'Nueva Empresa' }}
+                            </h3>
+
+                            <div class="space-y-4">
+                                <div class="space-y-1">
+                                    <label
+                                        class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Razón
+                                        Social</label>
+                                    <input type="text" v-model="companyForm.razonSocial"
+                                        class="w-full px-4 py-2.5 bg-white border border-cyan-100 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700 uppercase shadow-sm">
+                                </div>
+
+                                <div class="space-y-1">
+                                    <label
+                                        class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">CUIT</label>
+                                    <input type="text" v-model="companyForm.cuit"
+                                        class="w-full px-4 py-2.5 bg-white border border-cyan-100 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all font-mono text-xs font-medium text-slate-700 shadow-sm">
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-1">
+                                        <label
+                                            class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Domicilio</label>
+                                        <input type="text" v-model="companyForm.domicilio"
+                                            class="w-full px-4 py-2.5 bg-white border border-cyan-100 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all text-xs font-semibold text-slate-700 uppercase shadow-sm">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label
+                                            class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Lugar
+                                            Pago</label>
+                                        <input type="text" v-model="companyForm.lugarPago"
+                                            class="w-full px-4 py-2.5 bg-white border border-cyan-100 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all text-xs font-semibold text-slate-700 uppercase shadow-sm">
+                                    </div>
+                                </div>
+
+                                <div class="pt-2">
+                                    <label
+                                        class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 block mb-2">Logo</label>
+                                    <div
+                                        class="flex items-center space-x-4 bg-white p-3 rounded-2xl border border-indigo-100 shadow-sm">
+                                        <div v-if="companyForm.logo"
+                                            class="h-12 w-12 rounded-lg border border-slate-100 p-1 flex items-center justify-center bg-slate-50">
+                                            <img :src="companyForm.logo" class="max-h-full max-w-full object-contain">
+                                        </div>
+                                        <div v-else
+                                            class="h-12 w-12 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300">
+                                            <i class="fa-solid fa-image"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <input type="file" @change="handleLogoUpload" accept="image/*"
+                                                class="text-xs w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                                        </div>
+                                        <button v-if="companyForm.logo" @click="companyForm.logo = null"
+                                            class="text-slate-400 hover:text-red-500 transition"><i
+                                                class="fa-solid fa-trash-can"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex justify-end space-x-3">
+                                <button v-if="isEditingCompany" @click="cancelEditCompany"
+                                    class="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 transition">CANCELAR</button>
+                                <button @click="saveCompanyForm"
+                                    class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 hover:scale-105 active:scale-95 transition-all uppercase tracking-wide">
+                                    {{ isEditingCompany ? 'Guardar Cambios' : 'Crear Empresa' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- MODAL HISTORIAL DE RECIBOS (GOD TIER) -->
+        <transition name="toast">
+            <div v-if="showHistoryModal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+                <!-- Backdrop -->
+                <div @click="closeHistoryModal"
+                    class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"></div>
+
+                <div
+                    class="bg-white rounded-3xl shadow-2xl w-full max-w-7xl overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100 flex flex-col max-h-[85vh]">
+                    <div
+                        class="bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center shrink-0">
+                        <div>
+                            <h2
+                                class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                                <i class="fa-solid fa-clock-rotate-left text-cyan-500"></i> Historial de Recibos
+                            </h2>
+                            <p class="text-slate-400 text-xs font-medium">Registro de recibos generados para <span
+                                    class="text-cyan-600 font-bold">{{ company.razonSocial }}</span></p>
+                        </div>
+                        <button @click="closeHistoryModal"
+                            class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="px-8 py-3 bg-slate-50 border-b border-slate-100 flex gap-4 shrink-0">
+                        <!-- Filters -->
+                        <div class="space-y-1.5">
+                            <label
+                                class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Mes</label>
+                            <select v-model="historyFilterMonth"
+                                class="block w-44 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 uppercase shadow-sm">
+                                <option value="TODOS">TODOS</option>
+                                <option v-for="m in months" :key="m" :value="m">{{ m }}</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label
+                                class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Año</label>
+                            <select v-model="historyFilterYear"
+                                class="block w-36 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 uppercase shadow-sm">
+                                <option value="TODOS">TODOS</option>
+                                <option v-for="y in availableHistoryYears" :key="y" :value="y">{{ y }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="overflow-auto custom-scrollbar flex-1 p-0">
+                        <div v-if="filteredHistory.length === 0"
+                            class="flex flex-col items-center justify-center py-20 text-slate-300">
+                            <i class="fa-solid fa-folder-open text-5xl mb-4 opacity-50"></i>
+                            <p class="text-sm font-medium">No se encontraron recibos.</p>
+                        </div>
+
+                        <div v-else>
+                            <table class="w-full text-left border-collapse">
+                                <thead
+                                    class="bg-white sticky top-0 z-10 text-xs font-black uppercase text-slate-400 tracking-wider shadow-sm">
+                                    <tr>
+                                        <th class="px-6 py-5 font-black">Fecha</th>
+                                        <th class="px-6 py-5 font-black">Periodo</th>
+                                        <th class="px-6 py-5 font-black">Empleado</th>
+                                        <th class="px-6 py-5 font-black text-right">Neto</th>
+                                        <th class="px-6 py-5 font-black text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr v-for="rec in paginatedHistory" :key="rec.id"
+                                        class="hover:bg-slate-50/80 transition-colors group">
+                                        <td class="px-6 py-4 text-sm font-mono text-slate-500">
+                                            {{ new Date(rec.timestamp).toLocaleDateString() }}
+                                            <span class="text-xs text-slate-300 ml-1">{{ new
+                                                Date(rec.timestamp).toLocaleTimeString([], {hour: '2-digit',
+                                                minute:'2-digit'}) }}</span>
+                                        </td>
+                                        <td class="px-6 py-3 whitespace-nowrap">
+                                            <span
+                                                class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md text-[10px] font-bold uppercase whitespace-nowrap">{{
+                                                rec.receiptData.periodo }}</span>
+                                        </td>
+                                        <td class="px-6 py-3">
+                                            <span class="font-bold text-slate-700 text-xs">{{ rec.employee.nombre
+                                                }}</span>
+                                            <div class="text-[10px] text-slate-400">{{ rec.employee.categoria }}</div>
+                                        </td>
+                                        <td class="px-6 py-3 text-right">
+                                            <span class="font-mono font-bold text-slate-800 tracking-tight">{{
+                                                formatCurrency(rec.totals.neto) }}</span>
+                                        </td>
+                                        <td class="px-6 py-3">
+                                            <div
+                                                class="flex justify-center space-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                <button @click="loadFromHistory(rec)"
+                                                    class="w-8 h-8 rounded-full bg-white border border-slate-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200 flex items-center justify-center transition shadow-sm"
+                                                    title="Cargar">
+                                                    <i class="fa-solid fa-upload text-xs"></i>
+                                                </button>
+                                                <button @click="printFromHistory(rec)"
+                                                    class="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 flex items-center justify-center transition shadow-sm"
+                                                    title="Imprimir">
+                                                    <i class="fa-solid fa-print text-xs"></i>
+                                                </button>
+                                                <button @click="deleteFromHistory(rec.id)"
+                                                    class="w-8 h-8 rounded-full bg-white border border-slate-200 text-rose-500 hover:bg-rose-50 hover:border-rose-200 flex items-center justify-center transition shadow-sm"
+                                                    title="Eliminar">
+                                                    <i class="fa-solid fa-trash text-xs"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div v-if="filteredHistory.length > 0"
+                        class="px-6 py-4 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            Mostrando {{ (historyPage - 1) * historyItemsPerPage + 1 }} - {{ Math.min(historyPage *
+                            historyItemsPerPage, filteredHistory.length) }} de {{ filteredHistory.length }}
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <button @click="prevHistoryPage" :disabled="historyPage === 1"
+                                class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-cyan-600 disabled:opacity-30 disabled:hover:bg-white transition-colors">
+                                <i class="fa-solid fa-chevron-left text-xs"></i>
+                            </button>
+                            <span class="text-xs font-bold text-slate-600 w-16 text-center">
+                                Pág. {{ historyPage }} / {{ totalHistoryPages }}
+                            </span>
+                            <button @click="nextHistoryPage" :disabled="historyPage === totalHistoryPages"
+                                class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-cyan-600 disabled:opacity-30 disabled:hover:bg-white transition-colors">
+                                <i class="fa-solid fa-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- MODAL CONFIGURACION DEL SISTEMA (GOD TIER) -->
+        <transition name="toast">
+            <div v-if="showConfigModal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+                <!-- Backdrop -->
+                <div @click="closeConfigModal"
+                    class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"></div>
+
+                <!-- Modal Card -->
+                <div
+                    class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100 flex flex-col max-h-[85vh]">
+                    <div
+                        class="bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center shrink-0">
+                        <div>
+                            <h2
+                                class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                                <i class="fa-solid fa-sliders text-cyan-500"></i> Configuración
+                            </h2>
+                            <p class="text-slate-400 text-xs font-medium">Ajustes globales del sistema</p>
+                        </div>
+                        <button @click="closeConfigModal"
+                            class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+                        <div class="mb-6 bg-cyan-50/50 p-4 rounded-2xl border border-cyan-100/50">
+                            <h3
+                                class="font-bold text-xs text-cyan-900 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                <i class="fa-solid fa-wand-magic-sparkles text-cyan-500"></i> Deducciones Automáticas
+                            </h3>
+                            <p class="text-[10px] text-slate-500 italic mb-4">Estas deducciones se aplicarán al
+                                presionar la varita mágica.</p>
+
+                            <div class="space-y-3">
+                                <div v-for="(ded, index) in appConfig.deductions" :key="ded.id"
+                                    class="bg-white p-3 rounded-xl border border-cyan-100 shadow-sm relative group hover:shadow-md transition-all">
+                                    <button @click="removeDeductionConfig(ded.id)"
+                                        class="absolute -top-2 -right-2 bg-red-50 text-red-500 border border-red-100 rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white shadow-sm z-10"
+                                        title="Eliminar">
+                                        <i class="fa-solid fa-times text-[10px]"></i>
+                                    </button>
+
+                                    <div class="grid grid-cols-12 gap-3">
+                                        <div class="col-span-12 sm:col-span-6">
+                                            <label
+                                                class="block text-[9px] font-bold text-slate-300 uppercase mb-1 px-1">Concepto</label>
+                                            <input type="text" v-model="ded.label"
+                                                class="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400 outline-none uppercase font-bold text-slate-700 transition-all bg-slate-50 focus:bg-white">
+                                        </div>
+                                        <div class="col-span-6 sm:col-span-3">
+                                            <label
+                                                class="block text-[9px] font-bold text-slate-300 uppercase mb-1 px-1">%
+                                                Tasa</label>
+                                            <div class="relative">
+                                                <input type="text" inputmode="decimal" v-model.number="ded.rate"
+                                                    @input="$event.target.value = $event.target.value.replace(/[^0-9.]/g, '')"
+                                                    class="w-full border border-slate-200 rounded-lg pl-3 pr-6 py-1.5 text-xs focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400 outline-none text-right font-mono font-bold text-slate-700 bg-slate-50 focus:bg-white transition-all">
+                                                <span
+                                                    class="absolute right-2 top-1.5 text-[10px] text-slate-400 font-bold">%</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-span-6 sm:col-span-3">
+                                            <label
+                                                class="block text-[9px] font-bold text-slate-300 uppercase mb-1 px-1">Base
+                                                Cálculo</label>
+                                            <select v-model="ded.base"
+                                                class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400 outline-none text-slate-600 bg-slate-50 focus:bg-white cursor-pointer transition-all">
+                                                <option value="TOTAL_BRUTO">BRUTO</option>
+                                                <option value="SUELDO_BASICO">BÁSICO</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button @click="addDeductionConfig"
+                                class="w-full mt-4 py-3 border-2 border-dashed border-cyan-200 rounded-xl text-cyan-400 text-xs font-bold hover:border-cyan-400 hover:text-cyan-600 hover:bg-cyan-50 transition-all flex items-center justify-center uppercase tracking-wide">
+                                <i class="fa-solid fa-plus-circle mr-2"></i> Agregar Nueva Deducción
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-6 pt-2 bg-white flex justify-end border-t border-slate-50">
+                        <button @click="saveConfig"
+                            class="bg-slate-800 text-white px-8 py-3 rounded-xl text-xs font-bold hover:bg-slate-900 transition-all shadow-lg shadow-slate-200 hover:scale-105 active:scale-95 uppercase tracking-wider flex items-center">
+                            <i class="fa-solid fa-check-circle mr-2"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- MODAL NUEVO EMPLEADO (NIVEL DIOS) -->
+        <transition name="toast">
+            <div v-if="showNewEmployeeModal"
+                class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+                <!-- Backdrop -->
+                <div @click="closeNewEmployeeModal" class="absolute inset-0 bg-slate-900/60 backdrop-blur-md"></div>
+
+                <!-- Modal Card -->
+                <div
+                    class="bg-white rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] w-full max-w-xl overflow-hidden relative animate-in zoom-in duration-300">
+                    <div class="bg-slate-50 px-8 py-6 border-b border-slate-100 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">
+                                {{ isEditingEmployee ? 'Editar Empleado' : 'Nuevo Empleado' }}
+                            </h2>
+                            <p class="text-slate-500 text-xs font-medium">
+                                {{ headerSubtitle }}
+                            </p>
+                        </div>
+                        <button @click="closeNewEmployeeModal"
+                            class="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-400 transition-colors">
+                            <i class="fa-solid fa-times text-lg"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-8 space-y-5">
+                        <!-- Nombre -->
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Nombre
+                                Completo</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-user absolute left-4 top-3.5 text-slate-300"></i>
+                                <input type="text" v-model="newEmployeeForm.nombre"
+                                    class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700 uppercase"
+                                    placeholder="EJ: PEREZ JUAN">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-5">
+                            <!-- CUIL -->
+                            <div class="space-y-1.5">
+                                <label
+                                    class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">CUIL</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-id-card absolute left-4 top-3.5 text-slate-300"></i>
+                                    <input type="text" v-model="newEmployeeForm.cuil"
+                                        class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all font-mono text-sm font-bold text-slate-700"
+                                        placeholder="00-00000000-0">
+                                </div>
+                            </div>
+                            <!-- LEGAJO -->
+                            <div class="space-y-1.5">
+                                <label
+                                    class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Legajo</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-hashtag absolute left-4 top-3.5 text-slate-300"></i>
+                                    <input type="text" v-model="newEmployeeForm.legajo"
+                                        class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all font-mono text-sm font-bold text-slate-700"
+                                        placeholder="0000">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-5">
+                            <!-- FECHA INGRESO & ANTIGUEAD -->
+                            <!-- FECHA INGRESO -->
+                            <div class="space-y-1.5 col-span-2">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Fecha
+                                    Ingreso</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-calendar absolute left-4 top-3.5 text-slate-300"></i>
+                                    <input type="text" v-model="newEmployeeForm.ingreso"
+                                        class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700"
+                                        placeholder="DD/MM/YYYY">
+                                </div>
+                            </div>
+                            <!-- CATEGORIA -->
+                            <div class="space-y-1.5 col-span-2">
+                                <label
+                                    class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Categoría</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-briefcase absolute left-4 top-3.5 text-slate-300"></i>
+                                    <input type="text" v-model="newEmployeeForm.categoria"
+                                        class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700 uppercase"
+                                        placeholder="CONDUCTOR">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                        <div></div>
+                        <div class="flex space-x-3">
+                            <button @click="closeNewEmployeeModal"
+                                class="px-6 py-3 text-slate-500 font-bold text-sm hover:text-slate-700 transition-colors">
+                                CANCELAR
+                            </button>
+                            <button @click="saveEmployeeForm"
+                                class="px-8 py-3 bg-cyan-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-cyan-200 hover:bg-cyan-700 hover:scale-105 active:scale-95 transition-all uppercase tracking-wider">
+                                {{ isEditingEmployee ? 'Guardar Cambios' : 'Crear Empleado' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- MODAL BIBLIOTECA DE CONCEPTOS -->
+        <transition name="toast">
+            <div v-if="showConceptLibraryModal"
+                class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+                <!-- Backdrop -->
+                <div @click="closeConceptLibraryModal" class="absolute inset-0 bg-slate-900/60 backdrop-blur-md"></div>
+
+                <!-- Modal Card -->
+                <div
+                    class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl overflow-hidden relative flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
+                    <!-- HEADER -->
+                    <div
+                        class="px-8 py-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center shrink-0">
+                        <div>
+                            <h3 class="text-2xl font-black text-slate-800 tracking-tight flex items-center uppercase">
+                                <span
+                                    class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mr-4 shadow-sm border border-indigo-200">
+                                    <i class="fa-solid fa-book"></i>
+                                </span>
+                                Biblioteca de Conceptos
+                            </h3>
+                            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1 ml-14">
+                                Gestioná tus conceptos frecuentes para carga rápida
+                            </p>
+                        </div>
+                        <button @click="closeConceptLibraryModal"
+                            class="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-400 transition-colors">
+                            <i class="fa-solid fa-xmark text-xl"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-8 flex flex-col md:flex-row gap-8 scrollbar-hide">
+                        <!-- FORMULARIO DE CARGA (IZQUIERDA) -->
+                        <div class="w-full md:w-1/3 space-y-5">
+                            <div class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4 shadow-sm">
+                                <h4
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center px-1">
+                                    <i class="fa-solid fa-plus-circle mr-2 text-indigo-400"></i>
+                                    {{ isEditingLibraryConcept ? 'Editar Concepto' : 'Nuevo Concepto' }}
+                                </h4>
+
+                                <!-- CODIGO -->
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Código</label>
+                                    <input type="text" v-model="libraryConceptForm.code"
+                                        class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-slate-700 text-xs"
+                                        placeholder="EJ: 001">
+                                </div>
+
+                                <!-- DESCRIPCION -->
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Descripción</label>
+                                    <input type="text" v-model="libraryConceptForm.description"
+                                        class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-slate-700 uppercase text-xs"
+                                        placeholder="SUELDO BASICO">
+                                </div>
+
+                                <!-- TIPO -->
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Tipo</label>
+                                    <select v-model="libraryConceptForm.type"
+                                        class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-slate-700 text-xs cursor-pointer">
+                                        <option value="REM">REMUNERATIVO</option>
+                                        <option value="NO_REM">NO REMUNERATIVO</option>
+                                        <option value="DED">DEDUCCIÓN</option>
+                                    </select>
+                                </div>
+
+                                <!-- PRECIO POR DEFECTO -->
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Precio
+                                        Unitario ($)</label>
+                                    <input type="text" inputmode="decimal" v-model.number="libraryConceptForm.defaultPrice"
+                                        @input="$event.target.value = $event.target.value.replace(/[^0-9.]/g, '')"
+                                        class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono font-bold text-slate-700 text-xs"
+                                        placeholder="0.00">
+                                </div>
+
+                                <button @click="saveLibraryConcept"
+                                    class="w-full py-4 bg-indigo-600 text-white font-black text-xs rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-wider">
+                                    {{ isEditingLibraryConcept ? 'Guardar Cambios' : 'Añadir a Biblioteca' }}
+                                </button>
+
+                                <button v-if="isEditingLibraryConcept" @click="resetLibraryConceptForm"
+                                    class="w-full py-2 text-slate-400 font-bold text-[9px] uppercase tracking-widest hover:text-slate-600 transition-colors">
+                                    Cancelar Edición
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- LISTADO (DERECHA) -->
+                        <div class="flex-1 space-y-4">
+                            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Conceptos
+                                Guardados</h4>
+                            <div class="border border-slate-100 rounded-3xl overflow-hidden bg-white shadow-sm">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50 border-b border-slate-100">
+                                            <th
+                                                class="px-5 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                Cod</th>
+                                            <th
+                                                class="px-5 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                Descripción</th>
+                                            <th
+                                                class="px-5 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">
+                                                Valor Def.</th>
+                                            <th
+                                                class="px-5 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50">
+                                        <tr v-for="c in paginatedLibraryConcepts" :key="c.id"
+                                            class="hover:bg-slate-50 transition-colors group">
+                                            <td class="px-5 py-4 text-[10px] font-black text-indigo-600 font-mono">#{{
+                                                c.code }}</td>
+                                            <td class="px-5 py-4">
+                                                <div
+                                                    class="text-[11px] font-bold text-slate-700 uppercase line-clamp-1">
+                                                    {{ c.description }}</div>
+                                                <div class="text-[8px] font-bold px-2 py-0.5 rounded-full inline-block mt-1 uppercase"
+                                                    :class="c.type === 'REM' ? 'bg-green-50 text-green-600' : (c.type === 'DED' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600')">
+                                                    {{ c.type }}
+                                                </div>
+                                            </td>
+                                            <td
+                                                class="px-5 py-4 text-right text-[11px] font-mono font-bold text-slate-600">
+                                                {{ formatCurrency(c.defaultPrice) }}
+                                            </td>
+                                            <td class="px-5 py-4 text-center">
+                                                <div
+                                                    class="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button @click="editLibraryConcept(c)"
+                                                        class="w-8 h-8 bg-slate-100 text-slate-500 rounded-xl hover:bg-indigo-100 hover:text-indigo-600 transition-all flex items-center justify-center shadow-sm">
+                                                        <i class="fa-solid fa-pen-to-square text-[10px]"></i>
+                                                    </button>
+                                                    <button @click="deleteLibraryConcept(c.id)"
+                                                        class="w-8 h-8 bg-slate-100 text-slate-500 rounded-xl hover:bg-red-100 hover:text-red-600 transition-all flex items-center justify-center shadow-sm">
+                                                        <i class="fa-solid fa-trash text-[10px]"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="conceptLibrary.length === 0" class="animate-pulse">
+                                            <td colspan="4"
+                                                class="px-5 py-12 text-center text-slate-400 text-[11px] italic font-bold">
+                                                No hay conceptos guardados.<br>Empezá agregando uno a la izquierda.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <!-- PAGINACION BIBLIOTECA -->
+                                <div v-if="totalLibraryPages > 1"
+                                    class="bg-slate-50/50 p-4 border-t border-slate-100 flex items-center justify-between">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                        Página {{ libraryPage }} de {{ totalLibraryPages }}
+                                    </span>
+                                    <div class="flex gap-2">
+                                        <button @click="prevLibraryPage" :disabled="libraryPage === 1"
+                                            class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-200 transition-all shadow-sm">
+                                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                                        </button>
+                                        <button @click="nextLibraryPage" :disabled="libraryPage === totalLibraryPages"
+                                            class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-200 transition-all shadow-sm">
+                                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- TOAST SYSTEM -->
+        <div class="fixed top-4 right-4 z-[100] space-y-2 no-print">
+            <transition-group name="toast">
+                <div v-for="toast in toasts" :key="toast.id"
+                    :class="['px-4 py-3 rounded-lg shadow-lg text-white text-xs font-bold flex items-center min-w-[200px]', 
+                             toast.type === 'success' ? 'bg-green-600' : (toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600')]">
+                    <i
+                        :class="['mr-3', toast.type === 'success' ? 'fa-solid fa-check-circle' : 'fa-solid fa-info-circle']"></i>
+                    {{ toast.message }}
+                </div>
+            </transition-group>
+        </div>
+
+    </div>
+    <!-- End of App Wrapper -->
+
+    <script>
+        const { createApp, ref, computed, onMounted, onBeforeUnmount, watch } = Vue;
+
+        createApp({
+            setup() {
+                const addToast = (message, type = 'info') => {
+                    const id = Date.now();
+                    toasts.value.push({ id, message, type });
+                    setTimeout(() => {
+                        toasts.value = toasts.value.filter(t => t.id !== id);
+                    }, 3000);
+                };
+
+                // ==========================================
+                // GESTION MULTI-EMPRESA
+                // ==========================================
+                const companiesList = ref([]);
+                const selectedCompanyId = ref(null);
+
+                // Computed: devuelve objeto empresa actual (mantiene compatibilidad con template viejo)
+                const company = computed(() => {
+                    return companiesList.value.find(c => c.id === selectedCompanyId.value) || {
+                        razonSocial: 'SIN EMPRESA', cuit: '', domicilio: '', lugarPago: ''
+                    };
+                });
+
+                // GESTION MODAL EMPRESA
+                const showCompanyModal = ref(false);
+                const isEditingCompany = ref(false);
+                const companyForm = ref({ id: null, razonSocial: '', cuit: '', domicilio: '', lugarPago: '', logo: null });
+
+                const openCompanyModal = () => { showCompanyModal.value = true; resetCompanyForm(); };
+                const closeCompanyModal = () => showCompanyModal.value = false;
+                const resetCompanyForm = () => { isEditingCompany.value = false; companyForm.value = { id: null, razonSocial: '', cuit: '', domicilio: '', lugarPago: '', logo: null }; };
+
+                const handleLogoUpload = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    if (file.size > 200 * 1024) return alert('Archivo demasiado grande (Máx 200KB)');
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        companyForm.value.logo = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                };
+
+                // CONFIGURACION & TOASTS
+                const showConfigModal = ref(false);
+                const appConfig = ref({
+                    deductions: [
+                        { id: 'jub', label: 'JUBILACION', rate: 11, base: 'TOTAL_BRUTO' },
+                        { id: 'ley', label: 'LEY 19032', rate: 3, base: 'TOTAL_BRUTO' },
+                        { id: 'obs', label: 'OBRA SOCIAL', rate: 3, base: 'TOTAL_BRUTO' },
+                        { id: 'csi', label: 'CUOTA SINDICAL', rate: 3, base: 'TOTAL_BRUTO' },
+                        { id: 'sep', label: 'SEGURO DE SEPELIO', rate: 1.5, base: 'TOTAL_BRUTO' },
+                        { id: 'afi', label: 'CUOTA DE AFILIACION', rate: 2, base: 'SUELDO_BASICO' }
+                    ]
+                });
+
+                const addDeductionConfig = () => {
+                    appConfig.value.deductions.push({
+                        id: 'ded_' + Date.now(),
+                        label: 'NUEVA DEDUCCIÓN',
+                        rate: 0,
+                        base: 'TOTAL_BRUTO'
+                    });
+                };
+
+                const removeDeductionConfig = (id) => {
+                    appConfig.value.deductions = appConfig.value.deductions.filter(d => d.id !== id);
+                };
+                const openConfigModal = () => showConfigModal.value = true;
+                const closeConfigModal = () => showConfigModal.value = false;
+                const saveConfig = () => {
+                    saveGlobalData();
+                    showConfigModal.value = false;
+                    addToast('Configuración guardada correctamente', 'success');
+                };
+
+                const toasts = ref([]);
+
+                // ==========================================
+                // GESTION BIBLIOTECA DE CONCEPTOS
+                // ==========================================
+                const conceptLibrary = ref([]);
+                const showConceptLibraryModal = ref(false);
+                const isEditingLibraryConcept = ref(false);
+                const libraryConceptForm = ref({ id: null, code: '', description: '', type: 'REM', defaultPrice: 0 });
+
+                const openConceptLibraryModal = () => {
+                    showConceptLibraryModal.value = true;
+                    libraryPage.value = 1; // Reset to first page
+                    resetLibraryConceptForm();
+                };
+                const closeConceptLibraryModal = () => showConceptLibraryModal.value = false;
+                const resetLibraryConceptForm = () => {
+                    isEditingLibraryConcept.value = false;
+                    libraryConceptForm.value = { id: null, code: '', description: '', type: 'REM', defaultPrice: 0 };
+                };
+
+                const saveLibraryConcept = () => {
+                    const f = libraryConceptForm.value;
+                    if (!f.description) return addToast('La descripción es obligatoria', 'error');
+
+                    f.description = f.description.toUpperCase();
+                    f.code = (f.code || '').toUpperCase();
+
+                    // VALIDACIÓN: Código duplicado
+                    const exists = conceptLibrary.value.find(c => c.code === f.code && c.id !== f.id);
+                    if (exists && f.code) {
+                        return addToast(`El código "${f.code}" ya existe en la biblioteca`, 'error');
+                    }
+
+                    if (isEditingLibraryConcept.value) {
+                        const idx = conceptLibrary.value.findIndex(c => c.id === f.id);
+                        if (idx !== -1) conceptLibrary.value[idx] = { ...f };
+                    } else {
+                        const newConcept = { ...f, id: 'lib_' + Date.now() };
+                        conceptLibrary.value.push(newConcept);
+                    }
+                    saveGlobalData();
+                    resetLibraryConceptForm();
+                    addToast('Concepto guardado en biblioteca', 'success');
+                };
+
+                const editLibraryConcept = (concept) => {
+                    isEditingLibraryConcept.value = true;
+                    libraryConceptForm.value = { ...concept };
+                };
+
+                const deleteLibraryConcept = (id) => {
+                    if (!confirm('¿Eliminar este concepto de la biblioteca?')) return;
+                    conceptLibrary.value = conceptLibrary.value.filter(c => c.id !== id);
+                    if (libraryPage.value > totalLibraryPages.value && libraryPage.value > 1) {
+                        libraryPage.value--;
+                    }
+                    saveGlobalData();
+                };
+
+                // Paginación de Biblioteca
+                const libraryPage = ref(1);
+                const libraryItemsPerPage = 6;
+
+                const totalLibraryPages = computed(() => {
+                    return Math.ceil(conceptLibrary.value.length / libraryItemsPerPage);
+                });
+
+                const paginatedLibraryConcepts = computed(() => {
+                    const idx = (libraryPage.value - 1) * libraryItemsPerPage;
+                    return conceptLibrary.value.slice(idx, idx + libraryItemsPerPage);
+                });
+
+                const nextLibraryPage = () => {
+                    if (libraryPage.value < totalLibraryPages.value) libraryPage.value++;
+                };
+                const prevLibraryPage = () => {
+                    if (libraryPage.value > 1) libraryPage.value--;
+                };
+
+                // Búsqueda e Inserción
+                const librarySearchQuery = ref('');
+                const filteredLibraryConcepts = computed(() => {
+                    if (!librarySearchQuery.value) return [];
+                    const q = librarySearchQuery.value.toLowerCase();
+                    return conceptLibrary.value.filter(c =>
+                        c.description.toLowerCase().includes(q) ||
+                        c.code.toLowerCase().includes(q)
+                    );
+                });
+
+                const selectLibraryConcept = (libConcept) => {
+                    concepts.value.push({
+                        cantidad: 0,
+                        descripcion: libConcept.description,
+                        valorUnitario: libConcept.defaultPrice || 0,
+                        tipo: libConcept.type,
+                        code: libConcept.code // Guardamos el código aunque no se imprima
+                    });
+                    librarySearchQuery.value = '';
+                    addToast('Concepto agregado al recibo', 'success');
+                };
+
+                const editCompany = (comp) => {
+                    isEditingCompany.value = true;
+                    companyForm.value = { ...comp };
+                };
+                const cancelEditCompany = resetCompanyForm;
+
+                const saveCompanyForm = () => {
+                    if (!companyForm.value.razonSocial) return alert('Razón Social requerida');
+                    if (isEditingCompany.value) {
+                        // Edit
+                        const idx = companiesList.value.findIndex(c => c.id === companyForm.value.id);
+                        if (idx !== -1) companiesList.value[idx] = { ...companyForm.value };
+                    } else {
+                        // New
+                        const newComp = { ...companyForm.value, id: 'comp_' + Date.now() };
+                        companiesList.value.push(newComp);
+                        selectedCompanyId.value = newComp.id; // Switch to new
+                    }
+                    saveGlobalData();
+                    resetCompanyForm();
+                    addToast('Empresa guardada', 'success');
+                };
+
+                const deleteCompany = (id) => {
+                    // Check employees first
+                    const hasEmps = employeesList.value.some(e => e.companyId === id);
+                    if (hasEmps) return alert('No se puede eliminar: Esta empresa tiene empleados asignados.');
+
+                    if (!confirm('Borrar empresa?')) return;
+                    companiesList.value = companiesList.value.filter(c => c.id !== id);
+                    // Select another if deleted current
+                    if (selectedCompanyId.value === id && companiesList.value.length > 0) {
+                        selectedCompanyId.value = companiesList.value[0].id;
+                    }
+                    saveGlobalData();
+                };
+
+                // Watch cambio de empresa para limpiar seleccion
+                watch(selectedCompanyId, (newVal) => {
+                    // Al cambiar empresa, limpiar empleado y conceptos
+                    const empsInNewCompany = employeesList.value.filter(e => e && e.companyId === newVal);
+                    if (empsInNewCompany.length > 0) {
+                        employee.value = { ...empsInNewCompany[0] };
+                    } else {
+                        employee.value = { id: null, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: 0, categoria: '', companyId: null };
+                    }
+                    concepts.value = [];
+                });
+
+                // ==========================================
+                // GESTION EMPLEADOS (NIVEL DIOS)
+                // ==========================================
+                const employeesList = ref([]);
+                const showNewEmployeeModal = ref(false);
+                const isEditingEmployee = ref(false);
+                const newEmployeeForm = ref({ id: null, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: '', categoria: '' });
+
+                // AUTOMATIC SENIORITY CALCULATION (User Request)
+                const calculateSeniority = (dateString) => {
+                    // Expect DD/MM/YYYY
+                    if (!dateString || !/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) return;
+
+                    const [day, month, year] = dateString.split('/').map(Number);
+                    const admissionDate = new Date(year, month - 1, day);
+                    const today = new Date();
+
+                    let years = today.getFullYear() - admissionDate.getFullYear();
+                    const m = today.getMonth() - admissionDate.getMonth();
+
+                    if (m < 0 || (m === 0 && today.getDate() < admissionDate.getDate())) {
+                        years--;
+                    }
+
+                    // Update the form automatically
+                    newEmployeeForm.value.antiguedad = Math.max(0, years);
+                };
+
+                // Watch for changes in Admission Date
+                watch(() => newEmployeeForm.value.ingreso, (newVal) => {
+                    calculateSeniority(newVal);
+                });
+
+                const openNewEmployeeModal = () => {
+                    isEditingEmployee.value = false;
+                    newEmployeeForm.value = { id: null, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: '', categoria: '' };
+                    showNewEmployeeModal.value = true;
+                };
+
+                const openEditEmployeeModal = () => {
+                    if (!employee.value.id) return addToast('No hay empleado cargado para editar', 'error');
+                    isEditingEmployee.value = true;
+                    newEmployeeForm.value = { ...employee.value }; // Load current data
+                    showNewEmployeeModal.value = true;
+                };
+
+                const closeNewEmployeeModal = () => showNewEmployeeModal.value = false;
+
+                const saveEmployeeForm = () => {
+                    const f = newEmployeeForm.value;
+                    if (!f.nombre) return addToast('El nombre es obligatorio', 'error');
+                    if (!f.cuil) return addToast('El CUIL es obligatorio', 'error');
+
+                    // NORMALIZE UPPERCASE
+                    f.nombre = f.nombre.toUpperCase();
+                    f.categoria = (f.categoria || '').toUpperCase();
+                    f.legajo = (f.legajo || '').toUpperCase();
+
+                    if (isEditingEmployee.value) {
+                        // EDIT MODE
+                        const idx = employeesList.value.findIndex(e => e.id === f.id);
+                        if (idx !== -1) {
+                            employeesList.value[idx] = { ...f };
+                            // If editing currently selected employee, update view
+                            if (employee.value.id === f.id) {
+                                employee.value = { ...f };
+                            }
+                            addToast('Empleado actualizado correctamente', 'success');
+                        }
+                    } else {
+                        // CREATE MODE
+                        const newEmp = {
+                            ...f,
+                            id: 'emp_' + Date.now(),
+                            companyId: selectedCompanyId.value,
+                            antiguedad: f.antiguedad || 0
+                        };
+                        employeesList.value.push(newEmp);
+                        // Auto-select new employee
+                        employee.value = { ...newEmp };
+                        addToast('Empleado creado con éxito', 'success');
+                    }
+
+                    saveGlobalData();
+                    showNewEmployeeModal.value = false;
+                };
+
+                const deleteEmployee = () => {
+                    const f = newEmployeeForm.value;
+                    if (!confirm(`¿Estás seguro de que querés eliminar a ${f.nombre}? Esta acción no se puede deshacer.`)) return;
+
+                    employeesList.value = employeesList.value.filter(e => e.id !== f.id);
+
+                    // Anti-Ghost: Reset if deleted employee was active
+                    if (employee.value.id === f.id) {
+                        // Find other employees in this company
+                        const remaining = employeesList.value.filter(e => e.companyId === selectedCompanyId.value);
+                        if (remaining.length > 0) {
+                            employee.value = { ...remaining[0] };
+                        } else {
+                            // No employees left
+                            employee.value = { id: null, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: '', categoria: '' };
+                        }
+                    }
+
+                    saveGlobalData();
+                    showNewEmployeeModal.value = false;
+                    addToast('Empleado eliminado correctamente', 'success');
+                };
+
+                const deleteSelectedEmployee = () => {
+                    const emp = employee.value;
+                    if (!emp.id) return;
+
+                    if (!confirm(`¿Estás seguro de que querés eliminar a ${emp.nombre}? Esta acción no se puede deshacer.`)) return;
+
+                    employeesList.value = employeesList.value.filter(e => e.id !== emp.id);
+
+                    // Anti-Ghost: Pick another employee
+                    const remaining = employeesList.value.filter(e => e.companyId === selectedCompanyId.value);
+                    if (remaining.length > 0) {
+                        employee.value = { ...remaining[0] };
+                    } else {
+                        employee.value = { id: null, nombre: '', cuil: '', legajo: '', ingreso: '', antiguedad: '', categoria: '' };
+                    }
+
+                    saveGlobalData();
+                    addToast('Empleado eliminado correctamente', 'success');
+                };
+
+                const filteredEmployees = computed(() => {
+                    if (!selectedCompanyId.value) return [];
+                    return employeesList.value.filter(e => e && e.companyId === selectedCompanyId.value);
+                });
+
+                const headerSubtitle = computed(() => {
+                    return isEditingEmployee.value
+                        ? 'Modificá los datos del empleado existente'
+                        : 'Ingresá los datos para el alta en el sistema';
+                });
+
+                const employee = ref({
+                    id: null,
+                    nombre: '',
+                    cuil: '',
+                    legajo: '',
+                    ingreso: '',
+                    antiguedad: 0,
+                    categoria: '',
+                    companyId: null
+                });
+
+                const loadEmployee = (empData) => {
+                    employee.value = { ...empData };
+                };
+
+
+                const updateCurrentEmployee = () => {
+                    if (!employee.value.nombre) return alert('Ingrese nombre');
+
+                    // Si no tiene ID, es nuevo
+                    if (!employee.value.id) {
+                        const newEmp = {
+                            ...employee.value,
+                            id: 'emp_' + Date.now(),
+                            companyId: selectedCompanyId.value
+                        };
+                        employeesList.value.push(newEmp);
+                        employee.value = newEmp; // Linkear
+                    } else {
+                        // Update existing
+                        const idx = employeesList.value.findIndex(e => e.id === employee.value.id);
+                        if (idx !== -1) employeesList.value[idx] = { ...employee.value };
+                    }
+                    saveGlobalData();
+                    addToast('Datos de empleado actualizados', 'success');
+                };
+
+                // BUSCADOR EMPLEADOS LÓGICA
+                const employeeSearch = ref('');
+                const showEmployeeList = ref(false);
+                const searchContainer = ref(null);
+
+                // Listener para cerrar al hacer clic afuera
+                const handleClickOutside = (event) => {
+                    if (searchContainer.value && !searchContainer.value.contains(event.target)) {
+                        showEmployeeList.value = false;
+                    }
+                };
+
+                const employeeSearchResults = computed(() => {
+                    if (!employeeSearch.value) return filteredEmployees.value;
+                    const q = employeeSearch.value.toLowerCase();
+                    return filteredEmployees.value.filter(e => {
+                        if (!e || !e.nombre) return false;
+                        return e.nombre.toLowerCase().includes(q) ||
+                            (e.legajo && e.legajo.toString().toLowerCase().includes(q));
+                    });
+                });
+
+                const selectEmployeeSearch = (emp) => {
+                    loadEmployee(emp);
+                    employeeSearch.value = ''; // Clean search after select
+                    showEmployeeList.value = false;
+                };
+
+                // DATOS RECIBO
+                const receipt = ref({
+                    periodo: '',
+                    fechaPago: '',
+                    ultimoDeposito: ''
+                });
+
+                // CONCEPTOS
+                const concepts = ref([]);
+
+                // VARIABLES AUXILIARES
+
+                // COMPUTED LOGICA
+                const processedConcepts = computed(() => {
+                    return concepts.value.map(c => {
+                        let total = 0;
+                        const cant = parseFloat(c.cantidad) || 0;
+                        const valor = parseFloat(c.valorUnitario) || 0;
+                        if (cant > 0 && valor > 0) total = cant * valor;
+                        else if (valor > 0) total = valor;
+                        total = Math.round(total * 100) / 100;
+                        return { ...c, total };
+                    });
+                });
+
+                const totalRemunerativo = computed(() => processedConcepts.value.filter(c => c.tipo === 'REM').reduce((sum, c) => sum + c.total, 0));
+                const totalNoRemunerativo = computed(() => processedConcepts.value.filter(c => c.tipo === 'NO_REM').reduce((sum, c) => sum + c.total, 0));
+                const totalHaberes = computed(() => totalRemunerativo.value + totalNoRemunerativo.value);
+                const totalDeducciones = computed(() => processedConcepts.value.filter(c => c.tipo === 'DED').reduce((sum, c) => sum + c.total, 0));
+
+                // Neto = Total Haberes - Deduc.
+                const netoPercibir = computed(() => totalHaberes.value - totalDeducciones.value);
+
+
+                // LOGICA SAC & DEDUCCIONES
+
+                const autoCalculateDeductions = () => {
+                    const existingRem = concepts.value.filter(c => c.tipo !== 'DED');
+
+                    // 1. Calcular Base Total Remunerativa
+                    let totalBruto = 0;
+                    existingRem.forEach(c => {
+                        if (c.tipo === 'REM') {
+                            totalBruto += (c.cantidad > 0 ? c.cantidad * c.valorUnitario : c.valorUnitario);
+                        }
+                    });
+
+                    // 2. Identificar "Sueldo Básico"
+                    const basicItem = existingRem.find(c => {
+                        const desc = c.descripcion.toUpperCase();
+                        return desc.includes('BASICO') || desc.includes('BÁSICO');
+                    });
+                    const sueldoBasico = basicItem ? (basicItem.cantidad > 0 ? basicItem.cantidad * basicItem.valorUnitario : basicItem.valorUnitario) : 0;
+
+                    const deduccionesNuevas = [];
+
+                    appConfig.value.deductions.forEach(d => {
+                        if (d.rate <= 0) return;
+
+                        let baseValue = d.base === 'SUELDO_BASICO' ? sueldoBasico : totalBruto;
+                        if (baseValue <= 0) return;
+
+                        let valor = baseValue * (d.rate / 100);
+                        // Redondear a 2 decimales para evitar errores de punto flotante
+                        valor = Math.round(valor * 100) / 100;
+
+                        deduccionesNuevas.push({
+                            cantidad: 0,
+                            descripcion: `${d.label} (${d.rate}%)`,
+                            valorUnitario: valor,
+                            tipo: 'DED'
+                        });
+                    });
+
+                    concepts.value = [...existingRem, ...deduccionesNuevas];
+                    addToast('Deducciones calculadas correctamente', 'success');
+                };
+
+                // HELPERS
+                const formatCurrency = (val) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+                const formatCurrencyPlain = (val) => {
+                    return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
+                };
+
+                const getDynamicFontSize = (text, baseSize, minSize = 10, maxLen = 12) => {
+                    if (!text) return baseSize;
+                    const len = text.toString().length;
+                    if (len <= maxLen) return baseSize;
+                    const ratio = maxLen / len;
+                    return Math.max(minSize, baseSize * ratio);
+                };
+                const formatNumber = (val) => new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
+                const numeroALetras = (num) => {
+                    if (num === 0) return 'CERO CON 00/100 CVOS.';
+
+                    const Unidades = (n) => {
+                        const u = ['', 'UN', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE'];
+                        return u[n];
+                    };
+                    const Decenas = (n) => {
+                        const d = ['', 'DIEZ', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
+                        const dv = ['DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISEIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE'];
+                        if (n < 10) return Unidades(n);
+                        if (n < 20) return dv[n - 10];
+                        if (n === 20) return 'VEINTE';
+                        if (n < 30) return 'VEINTI' + Unidades(n - 20);
+                        return d[Math.floor(n / 10)] + (n % 10 > 0 ? ' Y ' + Unidades(n % 10) : '');
+                    };
+                    const Centenas = (n) => {
+                        const c = ['', 'CIENTO', 'DOSCIENTOS', 'TRESCIENTOS', 'CUATROCIENTOS', 'QUINIENTOS', 'SEISCIENTOS', 'SETECIENTOS', 'OCHOCIENTOS', 'NOVECIENTOS'];
+                        if (n === 100) return 'CIEN';
+                        if (n < 100) return Decenas(n);
+                        return c[Math.floor(n / 100)] + (n % 100 > 0 ? ' ' + Decenas(n % 100) : '');
+                    };
+                    const Miles = (n) => {
+                        const divisor = 1000;
+                        const cientos = Math.floor(n / divisor);
+                        const resto = n % divisor;
+                        let strMiles = '';
+                        if (cientos > 0) {
+                            if (cientos > 1) strMiles = Centenas(cientos) + ' MIL';
+                            else strMiles = 'MIL';
+                        }
+                        let strCentenas = Centenas(resto);
+                        if (strMiles === '') return strCentenas;
+                        if (strCentenas === '') return strMiles;
+                        return strMiles + ' ' + strCentenas;
+                    };
+
+                    const entero = Math.floor(Math.abs(num));
+                    const decimales = Math.round((Math.abs(num) - entero) * 100);
+
+                    // Soporte hasta 999.999.999.999 (miles de millones)
+                    const millones = Math.floor(entero / 1000000);
+                    const restoMillones = entero % 1000000;
+
+                    let strMillones = '';
+                    if (millones === 1) {
+                        strMillones = 'UN MILLÓN';
+                    } else if (millones > 1) {
+                        strMillones = Miles(millones) + ' MILLONES';
+                    }
+
+                    let strResto = Miles(restoMillones);
+                    let strFinal = '';
+
+                    if (strMillones !== '' && strResto !== '') strFinal = strMillones + ' ' + strResto;
+                    else if (strMillones !== '') strFinal = strMillones;
+                    else strFinal = strResto;
+
+                    if (strFinal === '') strFinal = 'CERO';
+
+                    return `${strFinal.trim()} CON ${decimales.toString().padStart(2, '0')}/100 CVOS.`;
+                };
+
+                const addConceptSemiblank = (tipo) => concepts.value.push({ cantidad: 0, descripcion: 'ITEM NUEVO', valorUnitario: 0, tipo });
+                const removeConcept = (index) => concepts.value.splice(index, 1);
+                const printReceipt = () => {
+                    // Use Electron IPC to print with precise settings (Landscape)
+                    try {
+                        const { ipcRenderer } = require('electron');
+                        ipcRenderer.send('print-receipt');
+                    } catch (e) {
+                        console.warn('Electron IPC not available, falling back to window.print()', e);
+                        window.print();
+                    }
+                };
+
+                // ==========================================
+                // GESTION PERIODOS (SMART PICKER)
+                // ==========================================
+                const months = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+                const periodMonth = ref('SEPTIEMBRE');
+                const periodYear = ref(2025);
+
+                // Resizable Sidebar
+                const sidebarWidth = ref(localStorage.getItem('sidebarWidth') ? parseInt(localStorage.getItem('sidebarWidth')) : 384);
+                const isResizing = ref(false);
+
+                const startResizing = (e) => {
+                    isResizing.value = true;
+                    document.addEventListener('mousemove', handleMouseMove);
+                    document.addEventListener('mouseup', stopResizing);
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+                };
+
+                const handleMouseMove = (e) => {
+                    if (!isResizing.value) return;
+                    let newWidth = e.clientX;
+                    if (newWidth < 320) newWidth = 320;
+                    if (newWidth > 800) newWidth = 800;
+                    sidebarWidth.value = newWidth;
+                };
+
+                const stopResizing = () => {
+                    isResizing.value = false;
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', stopResizing);
+                    document.body.style.cursor = 'default';
+                    document.body.style.userSelect = 'auto';
+                    localStorage.setItem('sidebarWidth', sidebarWidth.value);
+                };
+
+                // Update text string when pickers change
+                watch([periodMonth, periodYear], () => {
+                    receipt.value.periodo = `${periodMonth.value} DE ${periodYear.value}`;
+                });
+
+
+                // ==========================================
+                // GESTION HISTORIAL
+                // ==========================================
+                const receiptHistory = ref([]);
+                const showHistoryModal = ref(false);
+
+                // Computed: Filter history by selected company
+                const historyFilterYear = ref('TODOS');
+                const historyFilterMonth = ref('TODOS');
+                const historyPage = ref(1);
+                const historyItemsPerPage = 10;
+
+                const availableHistoryYears = computed(() => {
+                    const years = new Set(receiptHistory.value.map(r => {
+                        try {
+                            // Periodo format: "MES DE AÑO"
+                            return r.receiptData.periodo.split(' DE ')[1];
+                        } catch (e) { return null; }
+                    }).filter(y => y));
+                    return Array.from(years).sort().reverse();
+                });
+
+                const filteredHistory = computed(() => {
+                    let list = receiptHistory.value.filter(r => r.companyId === selectedCompanyId.value);
+
+                    // Filter by Year
+                    if (historyFilterYear.value !== 'TODOS') {
+                        list = list.filter(r => r.receiptData.periodo.includes(historyFilterYear.value.toString()));
+                    }
+
+                    // Filter by Month
+                    if (historyFilterMonth.value !== 'TODOS') {
+                        list = list.filter(r => r.receiptData.periodo.startsWith(historyFilterMonth.value));
+                    }
+
+                    return list.sort((a, b) => b.timestamp - a.timestamp); // Newest first
+                });
+
+                const totalHistoryPages = computed(() => Math.ceil(filteredHistory.value.length / historyItemsPerPage));
+
+                const paginatedHistory = computed(() => {
+                    const start = (historyPage.value - 1) * historyItemsPerPage;
+                    const end = start + historyItemsPerPage;
+                    return filteredHistory.value.slice(start, end);
+                });
+
+                const nextHistoryPage = () => {
+                    if (historyPage.value < totalHistoryPages.value) historyPage.value++;
+                };
+                const prevHistoryPage = () => {
+                    if (historyPage.value > 1) historyPage.value--;
+                };
+
+                // Reset page when filters change
+                watch([historyFilterYear, historyFilterMonth], () => historyPage.value = 1);
+
+                const saveReceipt = () => {
+                    if (!employee.value.nombre) return alert('No se puede guardar: Falta nombre del empleado');
+
+                    // Ensure company is valid
+                    const currentComp = companiesList.value.find(c => c.id === selectedCompanyId.value);
+                    if (!currentComp) return alert('No se puede guardar: Empresa no seleccionada o inválida');
+
+                    console.log('Guardando recibo para:', currentComp.razonSocial);
+
+                    const snapshot = {
+                        id: 'rec_' + Date.now() + '_' + Math.floor(Math.random() * 1000), // Random suffix to ensure uniqueness
+                        timestamp: Date.now(),
+                        companyId: selectedCompanyId.value,
+                        companyName: currentComp.razonSocial,
+                        employee: JSON.parse(JSON.stringify(employee.value)), // Deep clone
+                        receiptData: JSON.parse(JSON.stringify(receipt.value)), // Deep clone
+                        concepts: JSON.parse(JSON.stringify(concepts.value)), // Deep clone
+                        totals: {
+                            rem: totalRemunerativo.value,
+                            norem: totalNoRemunerativo.value,
+                            ded: totalDeducciones.value,
+                            neto: netoPercibir.value
+                        }
+                    };
+
+                    receiptHistory.value.unshift(snapshot);
+                    saveGlobalData(); // Force save
+                    addToast('Recibo guardado en el historial', 'success');
+                };
+
+                const openHistoryModal = () => showHistoryModal.value = true;
+                const closeHistoryModal = () => showHistoryModal.value = false;
+
+                const deleteFromHistory = (id) => {
+                    if (!window.confirm('¿Seguro que desea eliminar este recibo permanentemente?')) return;
+                    receiptHistory.value = receiptHistory.value.filter(r => r.id !== id);
+                    saveGlobalData();
+                };
+
+                const loadFromHistory = (rec) => {
+                    if (!window.confirm('Cargar este recibo reemplazará los datos actuales en pantalla. ¿Continuar?')) return;
+                    _loadRecData(rec);
+                    closeHistoryModal();
+                    addToast('Recibo cargado desde historial', 'info');
+                };
+
+                // Helper to load data without confirmation/toast
+                const _loadRecData = (rec) => {
+                    // Deep clone to prevent reactivity issues
+                    employee.value = JSON.parse(JSON.stringify(rec.employee));
+                    receipt.value = JSON.parse(JSON.stringify(rec.receiptData));
+                    concepts.value = JSON.parse(JSON.stringify(rec.concepts));
+
+                    try {
+                        const parts = rec.receiptData.periodo.split(' DE ');
+                        if (parts.length === 2 && months.includes(parts[0])) {
+                            periodMonth.value = parts[0];
+                            periodYear.value = parseInt(parts[1]);
+                        }
+                    } catch (e) { }
+                };
+
+                const printFromHistory = async (rec) => {
+                    // 1. Backup Current State
+                    const backup = {
+                        emp: JSON.stringify(employee.value),
+                        rec: JSON.stringify(receipt.value),
+                        conc: JSON.stringify(concepts.value),
+                        perM: periodMonth.value,
+                        perY: periodYear.value
+                    };
+
+                    // 2. Load History Data
+                    _loadRecData(rec);
+
+                    // 3. Wait for DOM Update
+                    await Vue.nextTick();
+
+                    // 4. Print via IPC (PDF Strategy) instead of window.print()
+                    try {
+                        const { ipcRenderer } = require('electron');
+                        // Wait slightly longer for DOM to be fully painted before PDF generation
+                        setTimeout(() => {
+                            ipcRenderer.send('print-receipt');
+                        }, 200);
+                    } catch (e) {
+                        window.print();
+                    }
+
+                    // 5. Restore State (after a bigger delay to ensure PDF generation caught the dom)
+                    setTimeout(() => {
+                        employee.value = JSON.parse(backup.emp);
+                        receipt.value = JSON.parse(backup.rec);
+                        concepts.value = JSON.parse(backup.conc);
+                        periodMonth.value = backup.perM;
+                        periodYear.value = backup.perY;
+                    }, 2000); // Increased safety delay for PDF generation
+                };
+
+                // BACKUP & RESTORE
+                const exportBackup = () => {
+                    const data = localStorage.getItem('sistemaRecibos_v2_data');
+                    if (!data) return addToast('No hay datos para exportar', 'error');
+                    const blob = new Blob([data], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `backup_recibos_${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                    addToast('Copia de seguridad descargada', 'success');
+                };
+
+                // BACKUP & RESTORE
+                const importBackup = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const incomingData = JSON.parse(event.target.result);
+
+                            // Basic validation
+                            if (!incomingData || typeof incomingData !== 'object') {
+                                return addToast('El archivo de respaldo no es válido', 'error');
+                            }
+
+                            if (confirm('Atención: Se reemplazarán los datos actuales con el respaldo. ¿Continuar?')) {
+                                // Prepare safe data structure
+                                const safeData = {
+                                    companiesList: Array.isArray(incomingData.companiesList) ? incomingData.companiesList : [],
+                                    employeesList: Array.isArray(incomingData.employeesList) ? incomingData.employeesList : [],
+                                    selectedCompanyId: incomingData.selectedCompanyId,
+                                    receiptHistory: Array.isArray(incomingData.receiptHistory) ? incomingData.receiptHistory : [],
+                                    appConfig: incomingData.appConfig || {}, // Preserve or default
+                                    conceptLibrary: Array.isArray(incomingData.conceptLibrary) ? incomingData.conceptLibrary : [],
+                                    lastPeriod: incomingData.lastPeriod || { m: 'ENERO', y: 2026 }
+                                };
+
+                                // Smart fix: If no selectedCompanyId but we have companies, select the first one
+                                if (!safeData.selectedCompanyId && safeData.companiesList.length > 0) {
+                                    safeData.selectedCompanyId = safeData.companiesList[0].id;
+                                }
+
+                                // If loading a legacy/partial backup with companies but no employees/history, 
+                                // we should at least try to keep the App Config if it exists in current storage?
+                                // For now, let's Stick to the user's intent: Restore -> Replace.
+                                // But the "Smart Fix" above is crucial for the "No hizo nada" issue (likely undefined company selection).
+
+                                localStorage.setItem('sistemaRecibos_v2_data', JSON.stringify(safeData));
+                                addToast('Datos restaurados correctamente', 'success');
+                                setTimeout(() => location.reload(), 1000);
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            addToast('Error al leer el archivo de respaldo', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+
+                // INIT & MIGRATION
+                const saveGlobalData = () => {
+                    const data = {
+                        companiesList: companiesList.value,
+                        selectedCompanyId: selectedCompanyId.value,
+                        employeesList: employeesList.value,
+                        receiptHistory: receiptHistory.value,
+                        appConfig: appConfig.value,
+                        conceptLibrary: conceptLibrary.value,
+                        // Save last visual state preference too
+                        lastPeriod: { m: periodMonth.value, y: periodYear.value }
+                    };
+                    localStorage.setItem('sistemaRecibos_v2_data', JSON.stringify(data));
+                };
+
+                onMounted(() => {
+                    window.addEventListener('mousedown', handleClickOutside);
+                    const saved = localStorage.getItem('sistemaRecibos_v2_data');
+                    if (saved) {
+                        try {
+                            const parsed = JSON.parse(saved);
+                            companiesList.value = parsed.companiesList || [];
+                            employeesList.value = parsed.employeesList || [];
+                            selectedCompanyId.value = parsed.selectedCompanyId;
+                            receiptHistory.value = parsed.receiptHistory || [];
+                            conceptLibrary.value = parsed.conceptLibrary || [];
+
+                            // MIGRATION: UPPERCASE EMPLOYEES (Data Normalization)
+                            if (employeesList.value.length > 0) {
+                                let changed = false;
+                                employeesList.value.forEach(e => {
+                                    if (!e) return;
+                                    const n = (e.nombre || '').toUpperCase();
+                                    const cat = (e.categoria || '').toUpperCase();
+                                    const leg = (e.legajo || '').toUpperCase();
+                                    if (e.nombre !== n || e.categoria !== cat || e.legajo !== leg) {
+                                        e.nombre = n;
+                                        e.categoria = cat;
+                                        e.legajo = leg;
+                                        changed = true;
+                                    }
+                                });
+                                if (changed) saveGlobalData();
+                            }
+
+                            // MIGRATION: UPPERCASE HISTORY (Fix retroactive data)
+                            if (receiptHistory.value.length > 0) {
+                                let historyChanged = false;
+                                receiptHistory.value.forEach(rec => {
+                                    if (rec.employee) {
+                                        const n = (rec.employee.nombre || '').toUpperCase();
+                                        const c = (rec.employee.categoria || '').toUpperCase();
+                                        if (rec.employee.nombre !== n || rec.employee.categoria !== c) {
+                                            rec.employee.nombre = n;
+                                            rec.employee.categoria = c;
+                                            historyChanged = true;
+                                        }
+                                    }
+                                });
+                                if (historyChanged) saveGlobalData();
+                            }
+
+                            if (parsed.appConfig) {
+                                // MIGRATION & SAFETY: Ensure deductions exist and are not empty
+                                if (parsed.appConfig.deductions && parsed.appConfig.deductions.length > 0) {
+                                    appConfig.value = parsed.appConfig;
+                                } else if (parsed.appConfig.percentages) {
+                                    // Migrate from V2/V2.5 (percentages/labels)
+                                    const p = parsed.appConfig.percentages;
+                                    const l = parsed.appConfig.labels || {};
+                                    appConfig.value.deductions = [
+                                        { id: 'jub', label: l.jubilacion || 'JUBILACION', rate: p.jubilacion || 0, base: 'TOTAL_BRUTO' },
+                                        { id: 'ley', label: l.ley19032 || 'LEY 19032', rate: p.ley19032 || 0, base: 'TOTAL_BRUTO' },
+                                        { id: 'obs', label: l.obraSocial || 'OBRA SOCIAL', rate: p.obraSocial || 0, base: 'TOTAL_BRUTO' },
+                                        { id: 'csi', label: l.cuotaSindical || 'CUOTA SINDICAL', rate: p.cuotaSindical || 0, base: 'TOTAL_BRUTO' },
+                                        { id: 'sep', label: l.seguroSepelio || 'SEGURO DE SEPELIO', rate: p.seguroSepelio || 0, base: 'TOTAL_BRUTO' },
+                                        { id: 'afi', label: l.afiliacion || 'CUOTA DE AFILIACION', rate: p.afiliacion || 0, base: 'SUELDO_BASICO' }
+                                    ];
+                                }
+                                // Else: Keep defaults initialized in setup
+                            }
+                            if (parsed.lastPeriod) {
+                                periodMonth.value = parsed.lastPeriod.m || 'SEPTIEMBRE';
+                                periodYear.value = parsed.lastPeriod.y || 2025;
+                            }
+                        } catch (e) { }
+                    }
+
+                    // MIGRATION CHECK: Si no hay empresas, estamos en primer load v2
+                    if (companiesList.value.length === 0) {
+                        console.log('Migrando a v2...');
+                        // Crear empresa default con datos legacy
+                        const defId = 'comp_default';
+                        companiesList.value = [{
+                            id: defId,
+                            razonSocial: 'SOL DEL AMANECER S.R.L.',
+                            cuit: '30-71096574-5',
+                            domicilio: 'CAMINO 60 CUADRAS KM 5 1/2',
+                            lugarPago: 'CORDOBA'
+                        }];
+                        selectedCompanyId.value = defId;
+
+                        // Migrar empleados hardcodeados legacy
+                        const employeesDB_Legacy = [
+                            { nombre: 'ORTIZ DARIO ADRIAN', cuil: '20-21376999-6', legajo: '822.06', ingreso: '17/10/2012', categoria: 'AUXILIAR OPERATIVO' },
+                            { nombre: 'CANDELLERO VELOZO YOHANA', cuil: '27-35576499-6', legajo: '822.22', ingreso: '10/09/2015', categoria: 'ADMINISTRATIVO' },
+                            { nombre: 'PEREZ WILLY', cuil: '20-XXXXXXXX-X', legajo: '824.05', ingreso: '05/05/2018', categoria: 'CHOFER 1RA' },
+                            { nombre: 'LOPEZ ZARATE', cuil: '20-XXXXXXXX-X', legajo: '825.02', ingreso: '10/02/2020', categoria: 'PEON' }
+                        ];
+
+                        employeesList.value = employeesDB_Legacy.map((e, idx) => ({
+                            ...e,
+                            id: 'emp_legacy_' + idx,
+                            companyId: defId,
+                            antiguedad: 0 // Default
+                        }));
+
+                        saveGlobalData();
+                    }
+                });
+
+                onBeforeUnmount(() => {
+                    window.removeEventListener('mousedown', handleClickOutside);
+                });
+
+                // Debounced save to avoid excessive writes on every keystroke
+                let _saveTimeout = null;
+                const debouncedSave = () => {
+                    if (_saveTimeout) clearTimeout(_saveTimeout);
+                    _saveTimeout = setTimeout(saveGlobalData, 300);
+                };
+                watch([companiesList, employeesList, selectedCompanyId, appConfig, conceptLibrary, receiptHistory], debouncedSave, { deep: true });
+
+                // RECEIPT SCALING LOGIC
+                const receiptScale = ref(1);
+                const previewContainer = ref(null);
+
+                const updateScale = () => {
+                    if (!previewContainer.value) return;
+                    const containerWidth = previewContainer.value.clientWidth;
+                    // A4 Width approx 794px. We add some buffer.
+                    // Let's say target width is 800px.
+                    const targetWidth = 820;
+
+                    let newScale = Math.min(1, (containerWidth - 40) / targetWidth);
+                    newScale = Math.max(0.3, newScale);
+                    receiptScale.value = newScale;
+                };
+
+                const adjustScale = (delta) => {
+                    receiptScale.value = Math.max(0.3, Math.min(2, receiptScale.value + delta));
+                };
+
+                onMounted(() => {
+                    // Adding observer for resize
+                    if (previewContainer.value) {
+                        const resizeObserver = new ResizeObserver(() => {
+                            requestAnimationFrame(updateScale);
+                        });
+                        resizeObserver.observe(previewContainer.value);
+                    }
+                    window.addEventListener('resize', updateScale);
+                    setTimeout(updateScale, 500);
+                });
+
+                // Watch sidebar resize
+                watch(sidebarWidth, () => {
+                    requestAnimationFrame(updateScale);
+                });
+
+                return {
+                    receiptScale, previewContainer, updateScale, adjustScale,
+                    companiesList, selectedCompanyId, company,
+                    showCompanyModal, isEditingCompany, companyForm, openCompanyModal, closeCompanyModal, saveCompanyForm, editCompany, cancelEditCompany, deleteCompany,
+                    showConfigModal, appConfig, openConfigModal, closeConfigModal, saveConfig, toasts, addDeductionConfig, removeDeductionConfig,
+                    handleLogoUpload, exportBackup, importBackup, getDynamicFontSize,
+                    employeesList, filteredEmployees, loadEmployee, updateCurrentEmployee, employee,
+                    showNewEmployeeModal, newEmployeeForm, openNewEmployeeModal, closeNewEmployeeModal, saveEmployeeForm, isEditingEmployee, openEditEmployeeModal, deleteEmployee, deleteSelectedEmployee, headerSubtitle,
+                    employeeSearch, showEmployeeList, employeeSearchResults, selectEmployeeSearch, searchContainer,
+                    receipt, concepts, processedConcepts, totalRemunerativo, totalNoRemunerativo, totalHaberes, totalDeducciones, netoPercibir,
+                    autoCalculateDeductions, addConceptSemiblank, removeConcept, printReceipt, formatCurrency, formatCurrencyPlain, formatNumber, numeroALetras,
+
+                    // History
+                    saveReceipt, receiptHistory, showHistoryModal, openHistoryModal, closeHistoryModal, deleteFromHistory, loadFromHistory, filteredHistory,
+                    historyFilterYear, historyFilterMonth, historyPage, availableHistoryYears, paginatedHistory, totalHistoryPages, historyItemsPerPage, nextHistoryPage, prevHistoryPage, printFromHistory,
+
+                    // Resizable Sidebar
+                    sidebarWidth, isResizing, startResizing,
+
+                    // Period
+                    months, periodMonth, periodYear,
+
+                    // Biblioteca de Conceptos
+                    conceptLibrary, showConceptLibraryModal, isEditingLibraryConcept, libraryConceptForm,
+                    openConceptLibraryModal, closeConceptLibraryModal, saveLibraryConcept, editLibraryConcept, deleteLibraryConcept,
+                    librarySearchQuery, filteredLibraryConcepts, selectLibraryConcept,
+                    libraryPage, totalLibraryPages, paginatedLibraryConcepts, nextLibraryPage, prevLibraryPage
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
+```
