@@ -108,6 +108,36 @@
         .sb-tert { background: var(--sb-s); border-color: var(--sb-b); color: var(--sb-t3); }
         .sb-tert:hover { background: var(--sb-sh); }
 
+        /* ══════ MODAL DARK THEME ══════ */
+        .modal-dark .modal-card { background: #1e293b; border-color: #334155; }
+        .modal-dark .modal-header { background: #1e293b; border-color: #334155; }
+        .modal-dark .modal-header h2 { color: #f1f5f9; }
+        .modal-dark .modal-header p { color: #64748b; }
+        .modal-dark .modal-header button { color: #64748b; }
+        .modal-dark .modal-header button:hover { background: #334155; color: #e2e8f0; }
+        .modal-dark .modal-body { color: #cbd5e1; }
+        .modal-dark .modal-body input,
+        .modal-dark .modal-body select,
+        .modal-dark .modal-body textarea { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+        .modal-dark .modal-body input::placeholder { color: #475569; }
+        .modal-dark .modal-body label { color: #94a3b8; }
+        .modal-dark .modal-body .text-slate-800,
+        .modal-dark .modal-body .text-slate-700,
+        .modal-dark .modal-body .text-slate-600 { color: #cbd5e1 !important; }
+        .modal-dark .modal-body .text-slate-500,
+        .modal-dark .modal-body .text-slate-400 { color: #94a3b8 !important; }
+        .modal-dark .modal-body .bg-slate-50,
+        .modal-dark .modal-body .bg-gray-50 { background: #0f172a !important; }
+        .modal-dark .modal-body .border-slate-100,
+        .modal-dark .modal-body .border-slate-200,
+        .modal-dark .modal-body .border-gray-200 { border-color: #334155 !important; }
+        .modal-dark .modal-body .hover\:bg-slate-50:hover,
+        .modal-dark .modal-body .hover\:bg-gray-50:hover { background: #334155 !important; }
+        .modal-dark .modal-footer { background: #1e293b; border-color: #334155; }
+        .modal-dark .modal-body .bg-white { background: #1e293b !important; }
+        .modal-dark .modal-body .text-gray-500 { color: #94a3b8 !important; }
+        .modal-dark .modal-body .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        .modal-dark .modal-backdrop { background: rgba(0,0,0,0.7); }
         .print-container {
             width: 297mm;
             height: 210mm;
@@ -572,7 +602,7 @@
             <div class="flex-1 bg-slate-700 overflow-y-auto relative flex flex-col items-center justify-start py-8 custom-scrollbar"
                 ref="previewContainer">
                 <!-- Zoom Controls (Optional bonus) -->
-                <div class="fixed bottom-4 right-4 flex gap-2 z-50 opacity-50 hover:opacity-100 transition-opacity">
+                <div class="fixed bottom-4 right-4 flex gap-2 z-50 opacity-50 hover:opacity-100 transition-opacity no-print">
                     <button @click="adjustScale(-0.1)"
                         class="bg-gray-800 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg hover:bg-black">-</button>
                     <span class="bg-gray-800 text-white px-2 rounded-lg flex items-center text-xs h-8">{{
@@ -792,15 +822,15 @@
 
         <!-- MODAL GESTION EMPRESAS (GOD TIER) -->
         <transition name="toast">
-            <div v-if="showCompanyModal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+            <div v-if="showCompanyModal" :class="isDarkMode ? 'modal-dark' : ''" class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
                 <!-- Backdrop -->
                 <div @click="closeCompanyModal"
                     class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"></div>
 
                 <!-- Modal Card -->
                 <div
-                    class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100">
-                    <div class="bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center">
+                    class="modal-card bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100">
+                    <div class="modal-header bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center">
                         <div>
                             <h2
                                 class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
@@ -814,7 +844,7 @@
                         </button>
                     </div>
 
-                    <div class="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    <div class="modal-body p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
                         <!-- LISTA -->
                         <div class="space-y-3 mb-6">
                             <div v-for="comp in companiesList" :key="comp.id"
@@ -917,15 +947,15 @@
 
         <!-- MODAL HISTORIAL DE RECIBOS (GOD TIER) -->
         <transition name="toast">
-            <div v-if="showHistoryModal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+            <div v-if="showHistoryModal" :class="isDarkMode ? 'modal-dark' : ''" class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
                 <!-- Backdrop -->
                 <div @click="closeHistoryModal"
                     class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"></div>
 
                 <div
-                    class="bg-white rounded-3xl shadow-2xl w-full max-w-7xl overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100 flex flex-col max-h-[85vh]">
+                    class="modal-card bg-white rounded-3xl shadow-2xl w-full max-w-7xl overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100 flex flex-col max-h-[85vh]">
                     <div
-                        class="bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center shrink-0">
+                        class="modal-header bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center shrink-0">
                         <div>
                             <h2
                                 class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
@@ -1057,16 +1087,16 @@
 
         <!-- MODAL CONFIGURACION DEL SISTEMA (GOD TIER) -->
         <transition name="toast">
-            <div v-if="showConfigModal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
+            <div v-if="showConfigModal" :class="isDarkMode ? 'modal-dark' : ''" class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
                 <!-- Backdrop -->
                 <div @click="closeConfigModal"
                     class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"></div>
 
                 <!-- Modal Card -->
                 <div
-                    class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100 flex flex-col max-h-[85vh]">
+                    class="modal-card bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative animate-in zoom-in-95 duration-200 border border-slate-100 flex flex-col max-h-[85vh]">
                     <div
-                        class="bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center shrink-0">
+                        class="modal-header bg-white px-8 py-5 border-b border-slate-100 flex justify-between items-center shrink-0">
                         <div>
                             <h2
                                 class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
@@ -1150,14 +1180,14 @@
 
         <!-- MODAL NUEVO EMPLEADO (NIVEL DIOS) -->
         <transition name="toast">
-            <div v-if="showNewEmployeeModal"
+            <div v-if="showNewEmployeeModal" :class="isDarkMode ? 'modal-dark' : ''"
                 class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
                 <!-- Backdrop -->
                 <div @click="closeNewEmployeeModal" class="absolute inset-0 bg-slate-900/60 backdrop-blur-md"></div>
 
                 <!-- Modal Card -->
                 <div
-                    class="bg-white rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] w-full max-w-xl overflow-hidden relative animate-in zoom-in duration-300">
+                    class="modal-card bg-white rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] w-full max-w-xl overflow-hidden relative animate-in zoom-in duration-300">
                     <div class="bg-slate-50 px-8 py-6 border-b border-slate-100 flex justify-between items-center">
                         <div>
                             <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">
@@ -1257,14 +1287,14 @@
 
         <!-- MODAL BIBLIOTECA DE CONCEPTOS -->
         <transition name="toast">
-            <div v-if="showConceptLibraryModal"
+            <div v-if="showConceptLibraryModal" :class="isDarkMode ? 'modal-dark' : ''"
                 class="fixed inset-0 z-[150] flex items-center justify-center p-4 no-print">
                 <!-- Backdrop -->
                 <div @click="closeConceptLibraryModal" class="absolute inset-0 bg-slate-900/60 backdrop-blur-md"></div>
 
                 <!-- Modal Card -->
                 <div
-                    class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl overflow-hidden relative flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
+                    class="modal-card bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl overflow-hidden relative flex flex-col max-h-[90vh] animate-in zoom-in duration-300">
                     <!-- HEADER -->
                     <div
                         class="px-8 py-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center shrink-0">
