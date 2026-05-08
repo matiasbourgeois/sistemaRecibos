@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Generador de Licencias — Sistema de Recibos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0f1e 0%, #1a1a3e 50%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #e2e8f0;
+        }
+        
+        .container {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 100px rgba(6, 182, 212, 0.05);
+            backdrop-filter: blur(20px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #06b6d4, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .section {
+            margin-bottom: 24px;
+        }
+        
+        .section-title {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #06b6d4;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #06b6d4;
+        }
+        
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            border-radius: 12px;
+            background: rgba(30, 41, 59, 0.8);
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+        }
+        
+        input:focus, select:focus {
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+        }
+        
+        input::placeholder {
+            color: #475569;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 14px;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #06b6d4, #3b82f6);
+            color: #0f172a;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        
+        .result {
+            display: none;
+            margin-top: 24px;
+            padding: 20px;
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 16px;
+        }
+        
+        .result.show { display: block; }
+        
+        .result-label {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #10b981;
+            margin-bottom: 8px;
+        }
+        
+        .result-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            word-break: break-all;
+            color: #22d3ee;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .result-code:hover {
+            border-color: #06b6d4;
+        }
+        
+        .result-code .copy-hint {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            font-size: 9px;
+            color: #475569;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .result-info {
+            margin-top: 12px;
+            font-size: 11px;
+            color: #64748b;
+        }
+        
+        .result-info strong {
+            color: #94a3b8;
+        }
+        
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(100, 116, 139, 0.15);
+            margin: 24px 0;
+        }
+        
+        .copied {
+            animation: flash 0.5s ease;
+        }
+        
+        @keyframes flash {
+            0% { background: rgba(6, 182, 212, 0.2); }
+            100% { background: rgba(15, 23, 42, 0.8); }
+        }
+        
+        .warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 11px;
+            color: #f59e0b;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Generador de Licencias</h1>
+            <p>Sistema de Recibos — Panel Admin</p>
+        </div>
+        
+        <div class="warning">
+            ⚠️ <strong>SOLO PARA ADMINISTRADOR.</strong> Este generador crea códigos de renovación para clientes cuya licencia expiró. El cliente te pasa su Machine ID → vos generás el código acá → se lo pasás.
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Datos del Cliente</div>
+            
+            <label>Machine ID del Cliente</label>
+            <input type="text" id="machineId" placeholder="Pegar el Machine ID que te pasó el cliente..." autocomplete="off">
+            
+            <label>Duración de la Licencia</label>
+            <select id="duration">
+                <option value="365">1 Año (365 días)</option>
+                <option value="180">6 Meses (180 días)</option>
+                <option value="90">3 Meses (90 días)</option>
+                <option value="30">1 Mes (30 días) — Prueba</option>
+                <option value="730">2 Años (730 días)</option>
+            </select>
+            
+            <button class="btn btn-primary" onclick="generateCode()">
+                Generar Código de Renovación
+            </button>
+        </div>
+        
+        <div class="result" id="result">
+            <div class="result-label">✅ Código Generado</div>
+            <div class="result-code" id="resultCode" onclick="copyCode()">
+                <span class="copy-hint">click para copiar</span>
+                <span id="codeText"></span>
+            </div>
+            <div class="result-info" id="resultInfo"></div>
+        </div>
+        
+        <hr class="divider">
+        
+        <div class="section">
+            <div class="section-title">Instrucciones para el Cliente</div>
+            <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+                1. El cliente abre la app y ve el modal "Licencia Expirada"<br>
+                2. Abajo del modal aparece su <strong>Machine ID</strong><br>
+                3. Te lo manda por WhatsApp/mail<br>
+                4. Vos pegás el Machine ID acá arriba y generás el código<br>
+                5. Le mandás el código al cliente<br>
+                6. El cliente hace click en "Tengo un código" en el modal<br>
+                7. Pega el código → Se renueva la licencia 🎉
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ══════ SAME ENCRYPTION AS license.js ══════
+        // This must use the same algorithm and salt as the app
+        
+        const SALT = 'SistemaRecibos_Supreme_2026_Salt_Key';
+        const PRODUCT = 'Sistema de Recibos Supreme';
+        
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        async function deriveKey(machineId) {
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                new TextEncoder().encode(machineId + SALT),
+                { name: 'PBKDF2' },
+                false,
+                ['deriveKey']
+            );
+            return crypto.subtle.deriveKey(
+                {
+                    name: 'PBKDF2',
+                    salt: new TextEncoder().encode(SALT),
+                    iterations: 100000,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['encrypt']
+            );
+        }
+        
+        async function generateCode() {
+            const machineId = document.getElementById('machineId').value.trim();
+            const duration = parseInt(document.getElementById('duration').value);
+            
+            if (!machineId || machineId.length < 10) {
+                alert('⚠️ Pegá un Machine ID válido (es un hash largo)');
+                return;
+            }
+            
+            const now = new Date();
+            const expiry = new Date(now.getTime() + duration * 24 * 60 * 60 * 1000);
+            
+            // Create renewal payload
+            const payload = {
+                machineId: machineId,
+                activationDate: now.toISOString(),
+                expiryDate: expiry.toISOString(),
+                duration: duration,
+                version: '5.0.0',
+                product: PRODUCT,
+                type: 'RENEWAL'
+            };
+            
+            // Encode to base64 with a simple signature
+            const payloadStr = JSON.stringify(payload);
+            const signature = await sha256(payloadStr + SALT + machineId);
+            
+            const renewalData = {
+                p: btoa(payloadStr),
+                s: signature.substring(0, 16) // First 16 chars of signature
+            };
+            
+            const code = btoa(JSON.stringify(renewalData));
+            
+            // Display
+            document.getElementById('codeText').textContent = code;
+            document.getElementById('resultInfo').innerHTML = `
+                <strong>Machine ID:</strong> ${machineId.substring(0, 12)}...${machineId.substring(machineId.length - 8)}<br>
+                <strong>Duración:</strong> ${duration} días<br>
+                <strong>Válida hasta:</strong> ${expiry.toLocaleDateString('es-AR')}<br>
+                <strong>Generada:</strong> ${now.toLocaleString('es-AR')}
+            `;
+            document.getElementById('result').classList.add('show');
+        }
+        
+        function copyCode() {
+            const code = document.getElementById('codeText').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const el = document.getElementById('resultCode');
+                el.classList.add('copied');
+                const hint = el.querySelector('.copy-hint');
+                hint.textContent = '✅ Copiado!';
+                setTimeout(() => {
+                    el.classList.remove('copied');
+                    hint.textContent = 'click para copiar';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

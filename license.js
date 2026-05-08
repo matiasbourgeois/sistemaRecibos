@@ -212,11 +212,77 @@ function autoActivate() {
     return { activated: false, message: validation.reason, data: getLicenseInfo() };
 }
 
+/**
+ * Renueva la licencia usando un código generado por el admin.
+ * El código contiene: Machine ID + nueva fecha de expiración + firma.
+ * @param {string} code - Código de renovación en base64
+ * @returns {{ success, message, data }}
+ */
+function renewWithCode(code) {
+    try {
+        const machineId = getMachineId();
+        
+        // 1. Decodificar el código
+        const decoded = JSON.parse(Buffer.from(code, 'base64').toString('utf8'));
+        const payload = JSON.parse(Buffer.from(decoded.p, 'base64').toString('utf8'));
+        const signature = decoded.s;
+        
+        // 2. Verificar firma
+        const expectedSig = crypto.createHash('sha256')
+            .update(JSON.stringify(payload) + SALT + payload.machineId)
+            .digest('hex')
+            .substring(0, 16);
+        
+        if (signature !== expectedSig) {
+            return { success: false, message: 'INVALID_CODE', data: null };
+        }
+        
+        // 3. Verificar que el Machine ID coincide
+        if (payload.machineId !== machineId) {
+            return { success: false, message: 'MACHINE_MISMATCH', data: null };
+        }
+        
+        // 4. Verificar que el código no está expirado (la fecha de expiración debe ser futura)
+        const expiry = new Date(payload.expiryDate);
+        if (expiry <= new Date()) {
+            return { success: false, message: 'CODE_EXPIRED', data: null };
+        }
+        
+        // 5. Crear nueva licencia con los datos del código
+        const licenseData = {
+            machineId: machineId,
+            activationDate: payload.activationDate,
+            expiryDate: payload.expiryDate,
+            version: payload.version || '5.0.0',
+            product: 'Sistema de Recibos Supreme',
+            owner: os.userInfo().username + '@' + os.hostname(),
+            renewedAt: new Date().toISOString(),
+            type: 'RENEWAL'
+        };
+        
+        const encrypted = encrypt(licenseData, machineId);
+        const licensePath = getLicensePath();
+        
+        const dir = path.dirname(licensePath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        
+        fs.writeFileSync(licensePath, encrypted, 'utf8');
+        
+        return { success: true, message: 'Licencia renovada exitosamente', data: getLicenseInfo() };
+    } catch (e) {
+        console.error('License renewal error:', e);
+        return { success: false, message: 'INVALID_CODE', data: null };
+    }
+}
+
 module.exports = {
     getMachineId,
     generateLicense,
     validateLicense,
     getLicenseInfo,
     autoActivate,
+    renewWithCode,
     LICENSE_DURATION_DAYS
 };

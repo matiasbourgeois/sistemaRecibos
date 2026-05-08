@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // License
     getLicenseInfo: () => ipcRenderer.invoke('license:info'),
     activateLicense: () => ipcRenderer.invoke('license:activate'),
+    renewLicense: (code) => ipcRenderer.invoke('license:renew', code),
     
     // Print
     printReceipt: () => ipcRenderer.send('print-receipt'),

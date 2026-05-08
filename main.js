@@ -56,6 +56,10 @@ ipcMain.handle('license:activate', async () => {
     return license.autoActivate();
 });
 
+ipcMain.handle('license:renew', async (event, code) => {
+    return license.renewWithCode(code);
+});
+
 ipcMain.handle('app:version', async () => {
     return app.getVersion();
 });

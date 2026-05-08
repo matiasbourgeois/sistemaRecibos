@@ -1560,10 +1560,39 @@
                             Tu licencia de uso ha vencido. Contactá al administrador para renovarla.
                         </p>
                         <div class="p-4 rounded-xl mb-4" :class="isDarkMode ? 'bg-slate-800' : 'bg-slate-50'">
-                            <div class="text-[10px] font-bold uppercase tracking-widest mb-1" :class="isDarkMode ? 'text-slate-500' : 'text-slate-400'">Machine ID</div>
-                            <div class="text-[9px] font-mono break-all" :class="isDarkMode ? 'text-slate-300' : 'text-slate-600'">{{ licenseInfo?.machineId }}</div>
+                            <div class="text-[10px] font-bold uppercase tracking-widest mb-1" :class="isDarkMode ? 'text-slate-500' : 'text-slate-400'">Tu Machine ID (pasale esto al admin)</div>
+                            <div class="text-[9px] font-mono break-all select-all cursor-pointer" :class="isDarkMode ? 'text-cyan-400' : 'text-blue-600'" :title="'Click para copiar'">{{ licenseInfo?.machineId }}</div>
                         </div>
-                        <p class="text-[10px]" :class="isDarkMode ? 'text-slate-500' : 'text-slate-400'">
+
+                        <!-- RENEWAL CODE INPUT -->
+                        <div v-if="!showRenewalInput" class="mt-4">
+                            <button @click="showRenewalInput = true"
+                                class="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border"
+                                :class="isDarkMode ? 'border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10' : 'border-blue-200 text-blue-600 hover:bg-blue-50'">
+                                <i class="fa-solid fa-key mr-2"></i> Tengo un código de renovación
+                            </button>
+                        </div>
+                        <div v-else class="mt-4 space-y-3">
+                            <div class="text-left">
+                                <label class="text-[10px] font-bold uppercase tracking-widest mb-1 block" :class="isDarkMode ? 'text-slate-400' : 'text-slate-500'">Código de Renovación</label>
+                                <textarea v-model="renewalCode" rows="3"
+                                    class="w-full px-4 py-3 rounded-xl text-[11px] font-mono outline-none resize-none transition-all border"
+                                    :class="isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-200 focus:border-cyan-500' : 'bg-slate-50 border-slate-200 text-slate-700 focus:border-blue-500'"
+                                    placeholder="Pegá acá el código que te dio el admin..."></textarea>
+                            </div>
+                            <div v-if="renewalError" class="text-xs text-rose-500 font-bold">{{ renewalError }}</div>
+                            <button @click="submitRenewalCode"
+                                class="w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 active:scale-[0.98] transition-all">
+                                <i class="fa-solid fa-unlock mr-2"></i> Renovar Licencia
+                            </button>
+                            <button @click="showRenewalInput = false; renewalCode = ''; renewalError = ''"
+                                class="w-full py-2 text-[10px] font-bold uppercase tracking-widest transition-all"
+                                :class="isDarkMode ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'">
+                                Cancelar
+                            </button>
+                        </div>
+
+                        <p class="text-[10px] mt-4" :class="isDarkMode ? 'text-slate-500' : 'text-slate-400'">
                             Contacto: administrador del sistema
                         </p>
                     </div>
@@ -1584,6 +1613,9 @@
                 // ==========================================
                 const licenseInfo = ref(null);
                 const showLicenseExpiredModal = ref(false);
+                const showRenewalInput = ref(false);
+                const renewalCode = ref('');
+                const renewalError = ref('');
 
                 const checkLicense = async () => {
                     if (window.electronAPI && window.electronAPI.isElectron) {
@@ -1599,6 +1631,34 @@
                         } catch (e) {
                             console.log('License check skipped (browser mode)');
                         }
+                    }
+                };
+
+                const submitRenewalCode = async () => {
+                    renewalError.value = '';
+                    const code = renewalCode.value.trim();
+                    if (!code) {
+                        renewalError.value = '⚠️ Pegá un código de renovación válido';
+                        return;
+                    }
+                    try {
+                        const result = await window.electronAPI.renewLicense(code);
+                        if (result.success) {
+                            licenseInfo.value = result.data;
+                            showLicenseExpiredModal.value = false;
+                            showRenewalInput.value = false;
+                            renewalCode.value = '';
+                            addToast('🎉 Licencia renovada exitosamente — ' + result.data.daysRemaining + ' días', 'success');
+                        } else {
+                            const msgs = {
+                                'INVALID_CODE': '❌ Código inválido. Verificá que lo pegaste completo.',
+                                'MACHINE_MISMATCH': '❌ Este código es para otra máquina.',
+                                'CODE_EXPIRED': '❌ Este código ya expiró. Pedí uno nuevo.'
+                            };
+                            renewalError.value = msgs[result.message] || '❌ Error desconocido: ' + result.message;
+                        }
+                    } catch (e) {
+                        renewalError.value = '❌ Error al procesar el código';
                     }
                 };
 
@@ -2642,7 +2702,7 @@
                 });
 
                 return {
-                    licenseInfo, showLicenseExpiredModal, checkLicense,
+                    licenseInfo, showLicenseExpiredModal, checkLicense, showRenewalInput, renewalCode, renewalError, submitRenewalCode,
                     receiptScale, previewContainer, updateScale, adjustScale,
                     companiesList, selectedCompanyId, company,
                     showCompanyModal, isEditingCompany, companyForm, openCompanyModal, closeCompanyModal, saveCompanyForm, editCompany, cancelEditCompany, deleteCompany,
